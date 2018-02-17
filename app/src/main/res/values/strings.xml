@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">RemoteDroid</string>
+    <string name="action_connect">Connect</string>
+</resources>
