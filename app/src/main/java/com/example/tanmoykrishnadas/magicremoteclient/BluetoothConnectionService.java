@@ -1,11 +1,13 @@
 package com.example.tanmoykrishnadas.magicremoteclient;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -98,6 +100,10 @@ public class BluetoothConnectionService {
         clientConnectThread.start();
     }
 
+    public void setContext(Context context) {
+        this.context = context;
+    }
+
     private class ClientConnectedThread extends Thread {
 
         private final BluetoothSocket clientBluetoothSocket;
@@ -113,6 +119,10 @@ public class BluetoothConnectionService {
             /// dismiss progressDialogBox
             progressDialogeBox.dismiss();
 
+            ((Activity) context).runOnUiThread(()->{
+                Toast.makeText(context, "Connection Successful", Toast.LENGTH_LONG).show();
+            });
+
             try {
                 tempI = clientBluetoothSocket.getInputStream();
                 tempO = clientBluetoothSocket.getOutputStream();
@@ -121,6 +131,8 @@ public class BluetoothConnectionService {
             }
             inputStream = tempI;
             outputStream = tempO;
+
+
         }
 
         public void run() {
@@ -129,14 +141,17 @@ public class BluetoothConnectionService {
 
             while (true) {
                 try {
+                    Log.e(TAG, "Trying to read input stream");
                     bytes = inputStream.read(buffer);
                     String incomingMessage = new String(buffer, 0, bytes);
-                    Log.d(TAG, "Input Stream: " + incomingMessage);
+                    Log.e(TAG, "Input Stream: " + incomingMessage);
                 } catch (IOException e) {
                     e.printStackTrace();
                     break;
                 }
             }
+
+            Log.e(TAG, "Input Aborted");
         }
 
         public void write(byte[] bytes) {
@@ -144,10 +159,13 @@ public class BluetoothConnectionService {
             Log.d(TAG, "write: writing to outputStream " + text);
             try {
                 outputStream.write(bytes);
+                outputStream.flush();
             } catch (IOException e) {
                 Log.e(TAG, "Error writing to outputStream");
             }
         }
+
+
 
         public void cancel() {
             try {

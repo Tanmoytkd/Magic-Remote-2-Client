@@ -1,199 +1,215 @@
 package com.example.tanmoykrishnadas.magicremoteclient;
 
+import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.os.Bundle;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Build;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.Socket;
+import java.util.ArrayList;
+import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity {
     public static final String TAG = "MainActivity";
 
-    Context context;
-    Button playPauseButton;
-    Button nextButton;
-    Button previousButton;
-    TextView mousePad;
+    BluetoothAdapter bluetoothAdapter;
+    ArrayList<BluetoothDevice> devices = new ArrayList<>();
 
-    private boolean isConnected=false;
-    private boolean mouseMoved=false;
-    private Socket socket;
-    private PrintWriter out;
+    public static BluetoothConnectionService bluetoothConnection;
 
-    private float initX =0;
-    private float initY =0;
-    private float disX =0;
-    private float disY =0;
+    RecyclerView deviceList;
+    public volatile boolean bondingReceiverFlag;
+    private volatile boolean deviceFoundReceiverFlag;
+    private volatile boolean BTStatusReceiverFlag;
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if(BTStatusReceiverFlag==true) unregisterReceiver(BTStatusReceiver);
+        if(deviceFoundReceiverFlag==true) unregisterReceiver(deviceFoundReceiver);
+        if(bondingReceiverFlag==true) unregisterReceiver(bondingReceiver);
+
+        bluetoothAdapter.disable();
+
+    }
+
+    public void goToKeyBoard(View v) {
+        startActivity(new Intent(MainActivity.this, KeyboardActivity.class));
+    }
+
+    public void goToMouse(View v) {
+        startActivity(new Intent(MainActivity.this, MouseActivity.class));
+    }
+
+    public void startConnection(BluetoothDevice remoteDevice) {
+        bluetoothConnection.startClient(remoteDevice, UUID.fromString(Constants.UUID));
+    }
+
+    public final BroadcastReceiver bondingReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            if (action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)) {
+                BluetoothDevice mDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                //3 cases:
+                //case1: bonded already
+                if (mDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
+                    Log.d(TAG, "BroadcastReceiver: BOND_BONDED.");
+
+                    startConnection(mDevice);
+                }
+                //case2: creating a bone
+                if (mDevice.getBondState() == BluetoothDevice.BOND_BONDING) {
+                    Log.d(TAG, "BroadcastReceiver: BOND_BONDING.");
+                }
+                //case3: breaking a bond
+                if (mDevice.getBondState() == BluetoothDevice.BOND_NONE) {
+                    Log.d(TAG, "BroadcastReceiver: BOND_NONE.");
+                }
+            }
+        }
+    };
+
+    private final BroadcastReceiver BTStatusReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
+                        BluetoothAdapter.ERROR);
+                switch (state) {
+                    case BluetoothAdapter.STATE_OFF:
+                        Log.d(TAG, "Bluetooth OFF");
+                        break;
+                    case BluetoothAdapter.STATE_TURNING_OFF:
+                        Log.d(TAG, "Bluetooth Turning Off");
+                        break;
+                    case BluetoothAdapter.STATE_ON:
+                        Log.d(TAG, "Bluetooth On");
+                        break;
+                    case BluetoothAdapter.STATE_TURNING_ON:
+                        Log.d(TAG, "Bluetooth Turning On");
+                        break;
+                }
+            }
+        }
+    };
+
+    private final BroadcastReceiver deviceFoundReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            Log.d(TAG, "ACTION FOUND.");
+
+            if (action.equals(BluetoothDevice.ACTION_FOUND)) {
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                devices.add(device);
+
+                deviceList.setAdapter(new DeviceAdapter(devices, MainActivity.this));
+
+                Log.d(TAG, "Device Found: " + device.getName() + " : " + device.getAddress());
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        context = this; //save the context to show Toast messages
+        deviceList = findViewById(R.id.deviceList);
 
-        //Get references of all buttons
-        playPauseButton = (Button)findViewById(R.id.playPauseButton);
-        nextButton = (Button)findViewById(R.id.nextButton);
-        previousButton = (Button)findViewById(R.id.previousButton);
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        bluetoothConnection = new BluetoothConnectionService(MainActivity.this);
+    }
 
-        //this activity extends View.OnClickListener, set this as onClickListener
-        //for all buttons
-        playPauseButton.setOnClickListener(this);
-        nextButton.setOnClickListener(this);
-        previousButton.setOnClickListener(this);
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(bluetoothConnection!=null) bluetoothConnection.setContext(MainActivity.this);
+    }
 
-        //Get reference to the TextView acting as mousepad
-        mousePad = (TextView)findViewById(R.id.mousePad);
+    public void enableDisableBT(View view) {
+        Log.d(TAG, "Toggle Bluetooth");
+        enableDisableBT();
+    }
 
-        //capture finger taps and movement on the textview
-        mousePad.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                //if(isConnected && out!=null){
-                    switch(event.getAction()){
-                        case MotionEvent.ACTION_DOWN:
-                            //save X and Y positions when user touches the TextView
-                            initX =event.getX();
-                            initY =event.getY();
-                            mouseMoved=false;
-                            break;
-                        case MotionEvent.ACTION_MOVE:
-                            disX = event.getX()- initX; //Mouse movement in x direction
-                            disY = event.getY()- initY; //Mouse movement in y direction
-                            /*set init to new position so that continuous mouse movement
-                            is captured*/
-                            initX = event.getX();
-                            initY = event.getY();
-                            if(disX !=0|| disY !=0){
-//                                out.println(disX +","+ disY); //send mouse movement to server
-                                Log.d(TAG,disX +","+ disY);
-                            }
-                            mouseMoved=true;
-                            break;
-                        case MotionEvent.ACTION_UP:
-                            //consider a tap only if usr did not move mouse after ACTION_DOWN
-                            if(!mouseMoved){
-//                                out.println(Constants.MOUSE_LEFT_CLICK);
-                                Log.d(TAG, Constants.MOUSE_LEFT_CLICK);
-                            }
-                    }
-//                }
-                return true;
+    public void enableDisableBT() {
+        if (bluetoothAdapter == null) {
+            AlertDialog.Builder builder;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                builder = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
+            } else {
+                builder = new AlertDialog.Builder(this);
             }
-        });
-    }
+            builder.setTitle("Bluetooth unavailable...")
+                    .setMessage("Bluetooth is not available in this device. This app will not be able to work here.")
+                    .setPositiveButton("Exit", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            finish();
+                        }
+                    })
 
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+        } else if (!bluetoothAdapter.isEnabled()) {
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivity(enableIntent);
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
+            IntentFilter BTIntentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+            registerReceiver(BTStatusReceiver, BTIntentFilter);
+            BTStatusReceiverFlag = true;
+        } else if (bluetoothAdapter.isEnabled()) {
+            bluetoothAdapter.disable();
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if(id == R.id.action_connect) {
-//            ConnectPhoneTask connectPhoneTask = new ConnectPhoneTask();
-//            connectPhoneTask.execute(Constants.SERVER_IP); //try to connect to server in another thread
-            Toast.makeText(this, "Connection Request", Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "Connection Request");
-            return true;
+            IntentFilter BTIntentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+            registerReceiver(BTStatusReceiver, BTIntentFilter);
+            BTStatusReceiverFlag = true;
         }
-
-        return super.onOptionsItemSelected(item);
     }
 
-    //OnClick method is called when any of the buttons are pressed
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.playPauseButton:
-                //if (isConnected && out!=null) {
-//                    out.println(Constants.PLAY);//send "play" to server
-                    Toast.makeText(this, "play", Toast.LENGTH_SHORT).show();
-                    Log.d(TAG, "play");
-                //}
-                break;
-            case R.id.nextButton:
-                //if (isConnected && out!=null) {
-//                    out.println(Constants.NEXT); //send "next" to server
-                    Toast.makeText(this, "next", Toast.LENGTH_SHORT).show();
-                    Log.d(TAG, "next");
-                //}
-                break;
-            case R.id.previousButton:
-                //if (isConnected && out!=null) {
-//                    out.println(Constants.PREVIOUS); //send "previous" to server
-                    Toast.makeText(this, "previous", Toast.LENGTH_SHORT).show();
-                    Log.d(TAG, "previous");
-                //}
-                break;
-        }
-
+    public void scanDevices(View view) {
+        Log.d(TAG, "Device Scan started...");
+        scanDevices();
     }
 
-    @Override
-    public void onDestroy()
-    {
-        super.onDestroy();
-        if(isConnected && out!=null) {
-            try {
-//                out.println("exit"); //tell server to exit
-                Log.d(TAG, "exit");
-                socket.close(); //close socket
-            } catch (IOException e) {
-                Log.d("remotedroid", "Error in closing socket", e);
+    public void scanDevices() {
+        if (bluetoothAdapter.isDiscovering()) bluetoothAdapter.cancelDiscovery();
+
+        devices = new ArrayList<>();
+        if(deviceList.getAdapter()!=null) deviceList.getAdapter().notifyDataSetChanged();
+        bluetoothAdapter.startDiscovery();
+
+        checkBluetoothPermission();
+
+        IntentFilter deviceFoundFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(deviceFoundReceiver, deviceFoundFilter);
+        deviceFoundReceiverFlag=true;
+    }
+
+    public void checkBluetoothPermission() {
+        if (Build.VERSION.SDK_INT > 23) {
+            int permissionCheck = this.checkSelfPermission("Manifest.permission.ACCESS_FINE_LOCATION");
+            permissionCheck += this.checkSelfPermission("Manifest.permission.ACCESS_COARSE_LOCATION");
+            if (permissionCheck != 0) {
+                this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 218);
             }
+
+        } else {
+            Log.d(TAG, "Bluetooth Permission Check: No need to check permission, SDK version < LOLLIPOP");
         }
     }
-
-//    public class ConnectPhoneTask extends AsyncTask<String,Void,Boolean> {
-//
-//        @Override
-//        protected Boolean doInBackground(String... params) {
-//            boolean result = true;
-//            try {
-//                InetAddress serverAddr = InetAddress.getByName(params[0]);
-//                socket = new Socket(serverAddr, Constants.SERVER_PORT);//Open socket on server IP and port
-//            } catch (IOException e) {
-//                Log.d("remotedroid", "Error while connecting", e);
-//                result = false;
-//            }
-//            return result;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(Boolean result)
-//        {
-//            isConnected = result;
-//            Toast.makeText(context,isConnected?"Connected to server!":"Error while connecting",Toast.LENGTH_SHORT).show();
-//            try {
-//                if(isConnected) {
-//                    out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket
-//                            .getOutputStream())), true); //create output stream to send data to server
-//                }
-//            }catch (IOException e){
-//                Log.d("remotedroid", "Error while creating OutWriter", e);
-//                Toast.makeText(context,"Error while connecting",Toast.LENGTH_SHORT).show();
-//            }
-//        }
-//    }
 }

@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Magic Remote Client.iml" filepath="$PROJECT_DIR$/Magic Remote Client.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Magic Remote 2 Client.iml" filepath="$PROJECT_DIR$/Magic Remote 2 Client.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

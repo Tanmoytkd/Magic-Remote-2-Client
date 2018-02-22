@@ -11,5 +11,6 @@ public class Constants {
     public static final String PLAY = "play";
     public static final String NEXT = "next";
     public static final String PREVIOUS = "previous";
-    public static final String appName="Magic Remote";
+    public static final String APP_NAME = "Magic Remote";
+    public static final String DELIM = "<TKD-RME-MAS>";
 }
