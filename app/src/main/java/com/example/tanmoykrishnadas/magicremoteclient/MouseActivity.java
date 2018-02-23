@@ -16,13 +16,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import static com.example.tanmoykrishnadas.magicremoteclient.Constants.DELIM;
+
 public class MouseActivity extends AppCompatActivity implements View.OnClickListener {
     public static final String TAG = "MouseActivity";
 
     Context context;
-    Button playPauseButton;
-    Button nextButton;
-    Button previousButton;
+    Button leftButton, middleButton, rightButton;
+
     TextView mousePad;
 
     private boolean isConnected=false;
@@ -48,15 +49,16 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
         context = this; //save the context to show Toast messages
 
         //Get references of all buttons
-        playPauseButton = (Button)findViewById(R.id.playPauseButton);
-        nextButton = (Button)findViewById(R.id.nextButton);
-        previousButton = (Button)findViewById(R.id.previousButton);
+        middleButton = (Button)findViewById(R.id.middleButton);
+        leftButton = (Button)findViewById(R.id.leftButton);
+        rightButton = (Button)findViewById(R.id.rightButton);
+
 
         //this activity extends View.OnClickListener, set this as onClickListener
         //for all buttons
-        playPauseButton.setOnClickListener(this);
-        nextButton.setOnClickListener(this);
-        previousButton.setOnClickListener(this);
+       middleButton.setOnClickListener(this);
+        leftButton.setOnClickListener(this);
+        rightButton.setOnClickListener(this);
 
         //Get reference to the TextView acting as mousepad
         mousePad = (TextView)findViewById(R.id.mousePad);
@@ -81,6 +83,8 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
                             initX = event.getX();
                             initY = event.getY();
                             if(disX !=0|| disY !=0){
+                                String finalMessage = "MOUSE_MOVE" + DELIM + disX + DELIM + disY;
+                                bluetoothConnection.write(finalMessage.getBytes());
 //                                out.println(disX +","+ disY); //send mouse movement to server
                                 Log.d(TAG,disX +","+ disY);
                             }
@@ -89,6 +93,8 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
                         case MotionEvent.ACTION_UP:
                             //consider a tap only if usr did not move mouse after ACTION_DOWN
                             if(!mouseMoved){
+                                String finalMessage = "LEFT_CLICK";
+                                bluetoothConnection.write(finalMessage.getBytes());
 //                                out.println(Constants.MOUSE_LEFT_CLICK);
                                 Log.d(TAG, Constants.MOUSE_LEFT_CLICK);
                             }
@@ -129,30 +135,35 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
     //OnClick method is called when any of the buttons are pressed
     @Override
     public void onClick(View v) {
+        String finalString = "";
         switch (v.getId()) {
-            case R.id.playPauseButton:
+            case R.id.middleButton:
                 //if (isConnected && out!=null) {
 //                    out.println(Constants.PLAY);//send "play" to server
-                    Toast.makeText(this, "play", Toast.LENGTH_SHORT).show();
-                    Log.d(TAG, "play");
+//                    Toast.makeText(this, "play", Toast.LENGTH_SHORT).show();
+//                    Log.d(TAG, "play");
+                finish();
                 //}
                 break;
-            case R.id.nextButton:
+            case R.id.leftButton:
                 //if (isConnected && out!=null) {
 //                    out.println(Constants.NEXT); //send "next" to server
-                    Toast.makeText(this, "next", Toast.LENGTH_SHORT).show();
-                    Log.d(TAG, "next");
+//                    Toast.makeText(this, "next", Toast.LENGTH_SHORT).show();
+//                    Log.d(TAG, "next");
+                finalString = "LEFT_CLICK";
                 //}
                 break;
-            case R.id.previousButton:
+            case R.id.rightButton:
                 //if (isConnected && out!=null) {
 //                    out.println(Constants.PREVIOUS); //send "previous" to server
-                    Toast.makeText(this, "previous", Toast.LENGTH_SHORT).show();
-                    Log.d(TAG, "previous");
+//                    Toast.makeText(this, "previous", Toast.LENGTH_SHORT).show();
+//                    Log.d(TAG, "previous");
+                finalString = "RIGHT_CLICK";
                 //}
                 break;
         }
 
+        bluetoothConnection.write(finalString.getBytes());
     }
 
     @Override

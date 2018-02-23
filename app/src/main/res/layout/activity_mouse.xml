@@ -15,34 +15,31 @@
         android:id="@+id/mousePad"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/playPauseButton"
+        android:layout_above="@+id/middleButton"
         android:background="@android:color/holo_blue_dark"
         android:clickable="true" />
 
     <Button
-        android:id="@+id/playPauseButton"
+        android:id="@+id/middleButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:text="Play/Pause" />
+        android:layout_centerHorizontal="true" />
 
     <Button
-        android:id="@+id/previousButton"
+        android:id="@+id/leftButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:text="Previous" />
+        android:layout_below="@+id/mousePad"
+        android:layout_marginStart="24dp" />
 
     <Button
-        android:id="@+id/nextButton"
+        android:id="@+id/rightButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
-        android:text="Next" />
+        android:layout_below="@+id/mousePad"
+        android:layout_marginEnd="16dp" />
 
 </RelativeLayout>
