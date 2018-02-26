@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
+import android.os.Parcelable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -17,6 +18,9 @@ import android.util.Log;
 import android.view.View;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
@@ -31,17 +35,33 @@ public class MainActivity extends AppCompatActivity {
     public volatile boolean bondingReceiverFlag;
     private volatile boolean deviceFoundReceiverFlag;
     private volatile boolean BTStatusReceiverFlag;
+    private volatile boolean previouslyEnabled;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        deviceList = findViewById(R.id.deviceList);
+
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        previouslyEnabled = bluetoothAdapter.isEnabled();
+        bluetoothConnection = BluetoothConnectionService.getInstance(MainActivity.this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (bluetoothConnection != null) bluetoothConnection.setContext(MainActivity.this);
+    }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        if(BTStatusReceiverFlag==true) unregisterReceiver(BTStatusReceiver);
-        if(deviceFoundReceiverFlag==true) unregisterReceiver(deviceFoundReceiver);
-        if(bondingReceiverFlag==true) unregisterReceiver(bondingReceiver);
-
-        bluetoothAdapter.disable();
-
+        if (BTStatusReceiverFlag) unregisterReceiver(BTStatusReceiver);
+        if (deviceFoundReceiverFlag) unregisterReceiver(deviceInfoReceiver);
+        if (bondingReceiverFlag) unregisterReceiver(bondingReceiver);
+        if (!previouslyEnabled) bluetoothAdapter.disable();
     }
 
     public void goToKeyBoard(View v) {
@@ -108,38 +128,65 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private final BroadcastReceiver deviceFoundReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver deviceInfoReceiver = new BroadcastReceiver() {
+        String action;
+        BluetoothDevice device;
+
         @Override
         public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-            Log.d(TAG, "ACTION FOUND.");
+            action = intent.getAction();
+            device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
-            if (action.equals(BluetoothDevice.ACTION_FOUND)) {
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 devices.add(device);
-
                 deviceList.setAdapter(new DeviceAdapter(devices, MainActivity.this));
 
+//                device.fetchUuidsWithSdp();
                 Log.d(TAG, "Device Found: " + device.getName() + " : " + device.getAddress());
+            } else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+                bluetoothConnection.setBluetoothStatus("connected");
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+
+            } else if (BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED.equals(action)) {
+                bluetoothConnection.setBluetoothStatus("disconnected");
+                bluetoothConnection.stopClient();
+            } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+                bluetoothConnection.setBluetoothStatus("disconnected");
+            } else if (BluetoothDevice.ACTION_UUID.equals(action)) {
+//                BluetoothDevice deviceExtra = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+//                Parcelable[] uuidExtra = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID);
+//                Log.d( TAG,"Current Device: "+ deviceExtra.getName() + "(" + deviceExtra.getAddress() + ")");
+//                if (uuidExtra != null) {
+//                    for (Parcelable p : uuidExtra) {
+//                        String currentDeviceUUID = p.toString();
+//                        Log.d(TAG, "uuidExtra - " + p);
+//                        if (currentDeviceUUID.contains(Constants.foreignUUID)) {
+//                            devices.add(deviceExtra);
+//                            Set<BluetoothDevice> allDevices = new TreeSet<>(new Comparator<BluetoothDevice>() {
+//                                @Override
+//                                public int compare(BluetoothDevice device, BluetoothDevice t1) {
+//                                    String s1 = device.getName() + " " + device.getAddress();
+//                                    String s2 = t1.getName() + " " + t1.getAddress();
+//                                    return s1.compareTo(s2);
+//                                }
+//                            });
+//                            allDevices.addAll(devices);
+//                            devices = new ArrayList<>(allDevices);
+//
+//                            deviceList.setAdapter(new DeviceAdapter(devices, MainActivity.this));
+//                            break;
+//                        }
+//                    }
+//                } else {
+//                    System.out.println("uuidExtra is still null");
+//                }
             }
+
         }
     };
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        deviceList = findViewById(R.id.deviceList);
-
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        bluetoothConnection = new BluetoothConnectionService(MainActivity.this);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if(bluetoothConnection!=null) bluetoothConnection.setContext(MainActivity.this);
+    public void disconnect(View view) {
+        bluetoothConnection.stopClient();
     }
 
     public void enableDisableBT(View view) {
@@ -190,14 +237,19 @@ public class MainActivity extends AppCompatActivity {
         if (bluetoothAdapter.isDiscovering()) bluetoothAdapter.cancelDiscovery();
 
         devices = new ArrayList<>();
-        if(deviceList.getAdapter()!=null) deviceList.getAdapter().notifyDataSetChanged();
+        if (deviceList.getAdapter() != null) deviceList.getAdapter().notifyDataSetChanged();
         bluetoothAdapter.startDiscovery();
 
         checkBluetoothPermission();
 
-        IntentFilter deviceFoundFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(deviceFoundReceiver, deviceFoundFilter);
-        deviceFoundReceiverFlag=true;
+        IntentFilter deviceFoundFilter = new IntentFilter();
+        deviceFoundFilter.addAction(BluetoothDevice.ACTION_FOUND);
+        deviceFoundFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        deviceFoundFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
+        deviceFoundFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        deviceFoundFilter.addAction(BluetoothDevice.ACTION_UUID);
+        registerReceiver(deviceInfoReceiver, deviceFoundFilter);
+        deviceFoundReceiverFlag = true;
     }
 
     public void checkBluetoothPermission() {

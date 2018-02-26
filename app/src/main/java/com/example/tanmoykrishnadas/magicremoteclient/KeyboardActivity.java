@@ -19,13 +19,43 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
     private Button cButton, xButton, vButton, aButton, oButton, sButton;
     private Button ctrlAltTButton, ctrlShiftZButton, altF4Button;
     private String previousText = "";
-    BluetoothConnectionService bluetoothConnection = MainActivity.bluetoothConnection;
+    BluetoothConnectionService bluetoothConnection;
+    private volatile boolean keyboardOn;
+
+    Thread activityManager = new Thread() {
+        @Override
+        public void run() {
+            while(keyboardOn) {
+                try {
+                    if(!bluetoothConnection.getBluetoothStatus().equals("connected")) finish();
+                    sleep(80);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        keyboardOn = true;
+        activityManager.start();
+        if(bluetoothConnection!=null) bluetoothConnection.setContext(KeyboardActivity.this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        keyboardOn = false;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_keyboard);
 
+        bluetoothConnection = BluetoothConnectionService.getInstance(KeyboardActivity.this);
 
         typeHereEditText = (EditText) findViewById(R.id.typeHereEditText);
         ctrlButton = (Button) findViewById(R.id.ctrlButton);
@@ -105,7 +135,7 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
                 break;
         }
 
-        String finalComand = action + DELIM + keyCode;
+        String finalComand = DELIM + action + DELIM + keyCode + DELIM;
         bluetoothConnection.write(finalComand.getBytes());
         return false;
     }
@@ -128,7 +158,8 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
                     message = "ALT_F4";
                     break;
             }
-            bluetoothConnection.write(message.getBytes());
+            String finalCommand = DELIM + message + DELIM;
+            bluetoothConnection.write(finalCommand.getBytes());
         } else {
             int keyCode = 17;//dummy initialization
             String action = "TYPE_KEY";
@@ -188,8 +219,8 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
                     keyCode = 8;
                     break;
             }
-            String finalMessage = action + DELIM + keyCode;
-            bluetoothConnection.write(finalMessage.getBytes());
+            String finalCommand = DELIM + action + DELIM + keyCode + DELIM;
+            bluetoothConnection.write(finalCommand.getBytes());
         }
     }
 
@@ -204,8 +235,8 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
             return;
         }
 
-        String finalMessage = "TYPE_CHARACTER" + DELIM + ch;
-        bluetoothConnection.write(finalMessage.getBytes());
+        String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + ch + DELIM;
+        bluetoothConnection.write(finalCommand.getBytes());
         previousText = s.toString();
     }
     @Override

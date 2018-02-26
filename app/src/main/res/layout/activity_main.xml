@@ -10,12 +10,12 @@
         android:id="@+id/enableDisableBT"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="44dp"
+        android:layout_marginTop="36dp"
         android:onClick="enableDisableBT"
         android:text="ToggleBluetooth"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/disconnect"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -25,11 +25,11 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:onClick="scanDevices"
         android:text="Scan For Devices"
-        app:layout_constraintEnd_toEndOf="@+id/enableDisableBT"
-        app:layout_constraintStart_toStartOf="@+id/enableDisableBT"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/enableDisableBT" />
 
     <android.support.v7.widget.RecyclerView
@@ -68,4 +68,18 @@
         android:text="Mouse"
         app:layout_constraintStart_toEndOf="@+id/scanDevices"
         app:layout_constraintTop_toTopOf="@+id/scanDevices" />
+
+    <Button
+        android:id="@+id/disconnect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:onClick="disconnect"
+        android:text="Disconnect"
+        app:layout_constraintBottom_toBottomOf="@+id/enableDisableBT"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/enableDisableBT"
+        app:layout_constraintTop_toTopOf="@+id/enableDisableBT" />
 </android.support.constraint.ConstraintLayout>

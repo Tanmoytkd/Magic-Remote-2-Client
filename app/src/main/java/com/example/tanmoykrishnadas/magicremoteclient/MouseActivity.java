@@ -7,209 +7,241 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Calendar;
 
 import static com.example.tanmoykrishnadas.magicremoteclient.Constants.DELIM;
 
 public class MouseActivity extends AppCompatActivity implements View.OnClickListener {
     public static final String TAG = "MouseActivity";
-
     Context context;
     Button leftButton, middleButton, rightButton;
-
     TextView mousePad;
-
-    private boolean isConnected=false;
-    private boolean mouseMoved=false;
+    private boolean isConnected = false;
+    private boolean mouseMoved = false;
     private Socket socket;
     private PrintWriter out;
-
-    private float initX =0;
-    private float initY =0;
-    private float disX =0;
-    private float disY =0;
-
+    private float initialX = 0;
+    private float initialY = 0;
+    private float distanceX = 0;
+    private float distanceY = 0;
+    private Calendar pressDownTime=Calendar.getInstance(), pressReleaseTime=Calendar.getInstance();
     BluetoothConnectionService bluetoothConnection;
+    private volatile boolean keyboardOn;
+
+    Thread activityManager = new Thread() {
+        @Override
+        public void run() {
+            while(keyboardOn) {
+                try {
+                    if(!bluetoothConnection.getBluetoothStatus().equals("connected")) finish();
+                    sleep(80);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mouse);
 
-        bluetoothConnection = MainActivity.bluetoothConnection;
-        bluetoothConnection.setContext(MouseActivity.this);
+        bluetoothConnection = BluetoothConnectionService.getInstance(MouseActivity.this);
 
-        context = this; //save the context to show Toast messages
+        context = this;
 
-        //Get references of all buttons
-        middleButton = (Button)findViewById(R.id.middleButton);
-        leftButton = (Button)findViewById(R.id.leftButton);
-        rightButton = (Button)findViewById(R.id.rightButton);
+        middleButton = (Button) findViewById(R.id.middleButton);
+        leftButton = (Button) findViewById(R.id.leftButton);
+        rightButton = (Button) findViewById(R.id.rightButton);
 
 
-        //this activity extends View.OnClickListener, set this as onClickListener
-        //for all buttons
-       middleButton.setOnClickListener(this);
+        middleButton.setOnClickListener(this);
         leftButton.setOnClickListener(this);
         rightButton.setOnClickListener(this);
 
-        //Get reference to the TextView acting as mousepad
-        mousePad = (TextView)findViewById(R.id.mousePad);
 
-        //capture finger taps and movement on the textview
+        mousePad = (TextView) findViewById(R.id.mousePad);
+
+//        mousePad.setOnLongClickListener(new View.OnLongClickListener() {
+//            @Override
+//            public boolean onLongClick(View view) {
+//                String finalCommand = DELIM + "RIGHT_CLICK" + DELIM;
+//                bluetoothConnection.write(finalCommand.getBytes());
+//                return false;
+//            }
+//        });
+
+
+
         mousePad.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                //if(isConnected && out!=null){
-                    switch(event.getAction()){
-                        case MotionEvent.ACTION_DOWN:
-                            //save X and Y positions when user touches the TextView
-                            initX =event.getX();
-                            initY =event.getY();
-                            mouseMoved=false;
-                            break;
-                        case MotionEvent.ACTION_MOVE:
-                            disX = event.getX()- initX; //Mouse movement in x direction
-                            disY = event.getY()- initY; //Mouse movement in y direction
-                            /*set init to new position so that continuous mouse movement
-                            is captured*/
-                            initX = event.getX();
-                            initY = event.getY();
-                            if(disX !=0|| disY !=0){
-                                String finalMessage = "MOUSE_MOVE" + DELIM + disX + DELIM + disY;
-                                bluetoothConnection.write(finalMessage.getBytes());
-//                                out.println(disX +","+ disY); //send mouse movement to server
-                                Log.d(TAG,disX +","+ disY);
-                            }
-                            mouseMoved=true;
-                            break;
-                        case MotionEvent.ACTION_UP:
-                            //consider a tap only if usr did not move mouse after ACTION_DOWN
-                            if(!mouseMoved){
-                                String finalMessage = "LEFT_CLICK";
-                                bluetoothConnection.write(finalMessage.getBytes());
-//                                out.println(Constants.MOUSE_LEFT_CLICK);
-                                Log.d(TAG, Constants.MOUSE_LEFT_CLICK);
-                            }
-                    }
-//                }
+                int fingers = event.getPointerCount();
+
+                if (fingers == 1) handleSingleTouch(event);
+                else if (fingers == 2) handleDoubleTouch(event);
+
                 return true;
             }
         });
+
+    }
+
+    int GLOBAL_TOUCH_POSITION_Y = 0;
+    int GLOBAL_TOUCH_CURRENT_POSITION_Y = 0;
+    int prevDiff = 0;
+    volatile boolean mousePressed = false;
+
+    private void handleSingleTouch(MotionEvent event) {
+        int action = event.getActionMasked();
+
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                pressDownTime = Calendar.getInstance();
+
+                if(pressDownTime.getTimeInMillis()-pressReleaseTime.getTimeInMillis()<180) {
+                    String finalCommand = DELIM + "LEFT_MOUSE_PRESS" + DELIM;
+                    bluetoothConnection.write(finalCommand.getBytes());
+                    mousePressed = true;
+                }
+
+                initialX = event.getX();
+                initialY = event.getY();
+                mouseMoved = false;
+                break;
+            case MotionEvent.ACTION_MOVE:
+
+                distanceX = event.getX() - initialX;
+                distanceY = event.getY() - initialY;
+
+                double distance = Math.sqrt(distanceX*distanceX + distanceY*distanceY);
+                double multiplicationFactor = Math.max(1, distance/7.00);
+//                Log.d("NEW_FEATURE", ""+distance);
+
+                initialX = event.getX();
+                initialY = event.getY();
+                if (distanceX != 0 || distanceY != 0) {
+                    String finalCommand = DELIM + "MOUSE_MOVE" + DELIM + distanceX*multiplicationFactor + DELIM + distanceY*multiplicationFactor + DELIM;
+                    bluetoothConnection.write(finalCommand.getBytes());
+                    mouseMoved = true;
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                if(mousePressed) {
+                    String finalCommand = DELIM + "LEFT_MOUSE_RELEASE" + DELIM;
+                    bluetoothConnection.write(finalCommand.getBytes());
+                    mousePressed=false;
+                }
+
+                pressReleaseTime = Calendar.getInstance();
+                Long timeDifference = pressReleaseTime.getTimeInMillis() - pressDownTime.getTimeInMillis();
+
+                if (!mouseMoved && timeDifference < 250) {
+                    String finalCommand = DELIM + "LEFT_CLICK" + DELIM;
+                    bluetoothConnection.write(finalCommand.getBytes());
+//                            ////Log.d(TAG, "LEFT_CLICK");
+                }
+        }
+
+    }
+
+    private void handleDoubleTouch(MotionEvent event) {
+        int action = event.getActionMasked();
+
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                GLOBAL_TOUCH_POSITION_Y = (int) event.getY(1);
+                break;
+            case MotionEvent.ACTION_UP:
+                GLOBAL_TOUCH_CURRENT_POSITION_Y = 0;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                GLOBAL_TOUCH_CURRENT_POSITION_Y = (int) event.getY(1);
+                int diff = GLOBAL_TOUCH_POSITION_Y - GLOBAL_TOUCH_CURRENT_POSITION_Y;
+//                //Log.d(TAG, "scroll: " + (diff-prevDiff));
+
+                String finalCommand = DELIM + "MOUSE_WHEEL" + DELIM + (prevDiff - diff) + DELIM;
+                bluetoothConnection.write(finalCommand.getBytes());
+
+                prevDiff = diff;
+                break;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                GLOBAL_TOUCH_POSITION_Y = (int) event.getY(1);
+                break;
+            default:
+        }
     }
 
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+//        // Inflate the menu; this adds items to the action bar if it is present.
+//        getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if(id == R.id.action_connect) {
-//            ConnectPhoneTask connectPhoneTask = new ConnectPhoneTask();
-//            connectPhoneTask.execute(Constants.SERVER_IP); //try to connect to server in another thread
-            Toast.makeText(this, "Connection Request", Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "Connection Request");
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
+//        // Handle action bar item clicks here. The action bar will
+//        // automatically handle clicks on the Home/Up button, so long
+//        // as you specify a parent activity in AndroidManifest.xml.
+//        int id = item.getItemId();
+//
+//        //noinspection SimplifiableIfStatement
+//        if (id == R.id.action_connect) {
+////            ConnectPhoneTask connectPhoneTask = new ConnectPhoneTask();
+////            connectPhoneTask.execute(Constants.SERVER_IP); //try to connect to server in another thread
+//            Toast.makeText(this, "Connection Request", Toast.LENGTH_SHORT).show();
+//            //Log.d(TAG, "Connection Request");
+//            return true;
+//        }
+//
+//        return super.onOptionsItemSelected(item);
+        return true;
     }
 
     //OnClick method is called when any of the buttons are pressed
     @Override
     public void onClick(View v) {
-        String finalString = "";
+        String finalCommand = "";
         switch (v.getId()) {
             case R.id.middleButton:
-                //if (isConnected && out!=null) {
-//                    out.println(Constants.PLAY);//send "play" to server
-//                    Toast.makeText(this, "play", Toast.LENGTH_SHORT).show();
-//                    Log.d(TAG, "play");
-                finish();
-                //}
+                finalCommand = DELIM + "MIDDLE_CLICK" + DELIM;
                 break;
             case R.id.leftButton:
-                //if (isConnected && out!=null) {
-//                    out.println(Constants.NEXT); //send "next" to server
-//                    Toast.makeText(this, "next", Toast.LENGTH_SHORT).show();
-//                    Log.d(TAG, "next");
-                finalString = "LEFT_CLICK";
-                //}
+                finalCommand = DELIM + "LEFT_CLICK" + DELIM;
                 break;
             case R.id.rightButton:
-                //if (isConnected && out!=null) {
-//                    out.println(Constants.PREVIOUS); //send "previous" to server
-//                    Toast.makeText(this, "previous", Toast.LENGTH_SHORT).show();
-//                    Log.d(TAG, "previous");
-                finalString = "RIGHT_CLICK";
-                //}
+                finalCommand = DELIM + "RIGHT_CLICK" + DELIM;
                 break;
         }
-
-        bluetoothConnection.write(finalString.getBytes());
+        bluetoothConnection.write(finalCommand.getBytes());
     }
 
     @Override
-    public void onDestroy()
-    {
+    public void onDestroy() {
         super.onDestroy();
-        if(isConnected && out!=null) {
-            try {
-//                out.println("exit"); //tell server to exit
-                Log.d(TAG, "exit");
-                socket.close(); //close socket
-            } catch (IOException e) {
-                Log.d("remotedroid", "Error in closing socket", e);
-            }
-        }
     }
 
-//    public class ConnectPhoneTask extends AsyncTask<String,Void,Boolean> {
-//
-//        @Override
-//        protected Boolean doInBackground(String... params) {
-//            boolean result = true;
-//            try {
-//                InetAddress serverAddr = InetAddress.getByName(params[0]);
-//                socket = new Socket(serverAddr, Constants.SERVER_PORT);//Open socket on server IP and port
-//            } catch (IOException e) {
-//                Log.d("remotedroid", "Error while connecting", e);
-//                result = false;
-//            }
-//            return result;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(Boolean result)
-//        {
-//            isConnected = result;
-//            Toast.makeText(context,isConnected?"Connected to server!":"Error while connecting",Toast.LENGTH_SHORT).show();
-//            try {
-//                if(isConnected) {
-//                    out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket
-//                            .getOutputStream())), true); //create output stream to send data to server
-//                }
-//            }catch (IOException e){
-//                Log.d("remotedroid", "Error while creating OutWriter", e);
-//                Toast.makeText(context,"Error while connecting",Toast.LENGTH_SHORT).show();
-//            }
-//        }
-//    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        keyboardOn = true;
+        activityManager.start();
+        if(bluetoothConnection!=null) bluetoothConnection.setContext(MouseActivity.this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        keyboardOn = false;
+    }
 }
