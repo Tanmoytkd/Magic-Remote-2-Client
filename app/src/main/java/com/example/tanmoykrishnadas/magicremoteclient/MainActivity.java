@@ -45,8 +45,20 @@ public class MainActivity extends AppCompatActivity {
         deviceList = findViewById(R.id.deviceList);
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        previouslyEnabled = bluetoothAdapter.isEnabled();
-        bluetoothConnection = BluetoothConnectionService.getInstance(MainActivity.this);
+
+        if(bluetoothAdapter!=null) {
+            previouslyEnabled = bluetoothAdapter.isEnabled();
+            bluetoothConnection = BluetoothConnectionService.getInstance(MainActivity.this);
+        } else {
+            AlertDialog noBluetoothDialog = new AlertDialog.Builder(this).setTitle("Bluetooth Unavailable").setMessage("Sorry, your device does not support bluetooth. Our app can not work here").setPositiveButton("Exit", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    finish();
+                }
+            }).create();
+            noBluetoothDialog.show();
+        }
+
     }
 
     @Override
@@ -61,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
         if (BTStatusReceiverFlag) unregisterReceiver(BTStatusReceiver);
         if (deviceFoundReceiverFlag) unregisterReceiver(deviceInfoReceiver);
         if (bondingReceiverFlag) unregisterReceiver(bondingReceiver);
-        if (!previouslyEnabled) bluetoothAdapter.disable();
+        if (!previouslyEnabled && bluetoothAdapter!=null) bluetoothAdapter.disable();
     }
 
     public void goToKeyBoard(View v) {
