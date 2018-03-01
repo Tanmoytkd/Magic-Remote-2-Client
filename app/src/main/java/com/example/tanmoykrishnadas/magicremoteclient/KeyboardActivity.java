@@ -29,7 +29,8 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
         public void run() {
             while(keyboardOn) {
                 try {
-                    if(!bluetoothConnection.getBluetoothStatus().equals("connected")) {
+                    String status = bluetoothConnection.getBluetoothStatus();
+                    if(!status.equals("connected")) {
                         Log.e(TAG, "Disconnected from host");
                         finish();
                     }

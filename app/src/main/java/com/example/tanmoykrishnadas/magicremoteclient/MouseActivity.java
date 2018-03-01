@@ -41,7 +41,6 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
             while(keyboardOn) {
                 try {
                     String status = bluetoothConnection.getBluetoothStatus();
-                    Log.d(TAG, status);
                     if(!status.equals("connected")) {
                         Log.e(TAG, "Disconnected from host");
                         finish();
