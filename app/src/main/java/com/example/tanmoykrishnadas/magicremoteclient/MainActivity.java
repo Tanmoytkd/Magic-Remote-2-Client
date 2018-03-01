@@ -70,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        disconnect();
         if (BTStatusReceiverFlag) unregisterReceiver(BTStatusReceiver);
         if (deviceFoundReceiverFlag) unregisterReceiver(deviceInfoReceiver);
         if (bondingReceiverFlag) unregisterReceiver(bondingReceiver);
@@ -198,6 +199,10 @@ public class MainActivity extends AppCompatActivity {
     };
 
     public void disconnect(View view) {
+        disconnect();
+    }
+
+    public void disconnect() {
         bluetoothConnection.stopClient();
     }
 

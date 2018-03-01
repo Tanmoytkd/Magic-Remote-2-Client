@@ -114,16 +114,12 @@ public class BluetoothConnectionService {
                     Log.e(TAG, "Trying to read input stream");
                     bytes = inputStream.read(buffer);
 
-                    if(bytes==-1) {
-                        setBluetoothStatus("disconnected");
-                        stopClient();
-                        cancel();
-                        break;
-                    }
-
                     String incomingMessage = new String(buffer, 0, bytes);
                     Log.e(TAG, "Input Stream: " + incomingMessage);
                 } catch (IOException e) {
+                    bluetoothStatus = "disconnected";
+                    stopClient();
+                    cancel();
                     e.printStackTrace();
                     break;
                 }

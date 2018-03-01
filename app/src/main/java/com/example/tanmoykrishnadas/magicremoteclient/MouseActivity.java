@@ -40,7 +40,12 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
         public void run() {
             while(keyboardOn) {
                 try {
-                    if(!bluetoothConnection.getBluetoothStatus().equals("connected")) finish();
+                    String status = bluetoothConnection.getBluetoothStatus();
+                    Log.d(TAG, status);
+                    if(!status.equals("connected")) {
+                        Log.e(TAG, "Disconnected from host");
+                        finish();
+                    }
                     sleep(80);
                 } catch (InterruptedException e) {
                     e.printStackTrace();

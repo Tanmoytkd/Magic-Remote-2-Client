@@ -4,6 +4,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -12,6 +13,7 @@ import android.widget.EditText;
 import static com.example.tanmoykrishnadas.magicremoteclient.Constants.DELIM;
 
 public class KeyboardActivity extends AppCompatActivity implements View.OnTouchListener, View.OnClickListener, TextWatcher {
+    public static final String TAG = "KeyboardActivity";
     private EditText typeHereEditText;
     private Button ctrlButton, altButton, shiftButton, enterButton, tabButton, escButton, printScrButton, backspaceButton;
     private Button deleteButton, clearTextButton;
@@ -27,7 +29,10 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
         public void run() {
             while(keyboardOn) {
                 try {
-                    if(!bluetoothConnection.getBluetoothStatus().equals("connected")) finish();
+                    if(!bluetoothConnection.getBluetoothStatus().equals("connected")) {
+                        Log.e(TAG, "Disconnected from host");
+                        finish();
+                    }
                     sleep(80);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
