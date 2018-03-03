@@ -16,7 +16,7 @@
         android:text="ToggleBluetooth"
         app:layout_constraintEnd_toStartOf="@+id/disconnect"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/home"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
@@ -81,5 +81,15 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/enableDisableBT"
+        app:layout_constraintTop_toTopOf="@+id/enableDisableBT" />
+
+    <Button
+        android:id="@+id/home"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:onClick="goToHome"
+        android:text="Home"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/enableDisableBT" />
 </android.support.constraint.ConstraintLayout>

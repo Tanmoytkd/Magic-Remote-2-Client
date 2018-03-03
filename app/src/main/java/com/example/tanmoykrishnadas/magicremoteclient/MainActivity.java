@@ -85,6 +85,10 @@ public class MainActivity extends AppCompatActivity {
         startActivity(new Intent(MainActivity.this, MouseActivity.class));
     }
 
+    public void goToHome(View v) {
+        startActivity(new Intent(MainActivity.this, HomeActivity.class));
+    }
+
     public void startConnection(BluetoothDevice remoteDevice) {
         bluetoothConnection.startClient(remoteDevice, UUID.fromString(Constants.UUID));
     }
