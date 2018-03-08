@@ -9,18 +9,18 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
-import android.os.Parcelable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
+
+import com.example.tanmoykrishnadas.magicremoteclient.backend.BluetoothConnectionService;
+import com.example.tanmoykrishnadas.magicremoteclient.backend.Constants;
 
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
@@ -155,6 +155,9 @@ public class MainActivity extends AppCompatActivity {
             device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                Toast.makeText(MainActivity.this,
+                        "Device Found: " + device.getName() + " : " + device.getAddress(), Toast.LENGTH_LONG).show();
+
                 devices.add(device);
                 deviceList.setAdapter(new DeviceAdapter(devices, MainActivity.this));
 

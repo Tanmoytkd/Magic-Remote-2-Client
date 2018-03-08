@@ -5,4 +5,9 @@
     <color name="colorAccent">#FF4081</color>
     <color name="veryverydarkRed">#644d0101</color>
     <color name="offWhite">#f8fbfe</color>
+    <color name="toolbar">#116893</color>
+    <color name="toolbarDark">#0c4866</color>
+    <color name="textColor">#082b40</color>
+    <color name="textColorLight">#0c4566</color>
+    <color name="buttonTextColor">#1f3e4f</color>
 </resources>

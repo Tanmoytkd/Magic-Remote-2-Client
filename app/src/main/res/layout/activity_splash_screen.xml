@@ -20,7 +20,7 @@
             android:contentDescription="Background Image of Splash Screen"
             android:cropToPadding="false"
             android:scaleType="centerCrop"
-            app:srcCompat="@drawable/icon" />
+            app:srcCompat="@drawable/splash_background_placeholder" />
 
         <ImageView
             android:id="@+id/splashForeground"
@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:visibility="gone"
-            app:srcCompat="@drawable/mouseicon1" />
+            app:srcCompat="@drawable/ring" />
 
     </FrameLayout>
 </RelativeLayout>

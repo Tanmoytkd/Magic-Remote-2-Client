@@ -10,7 +10,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
-import static com.example.tanmoykrishnadas.magicremoteclient.Constants.DELIM;
+import com.example.tanmoykrishnadas.magicremoteclient.backend.BluetoothConnectionService;
+
+import static com.example.tanmoykrishnadas.magicremoteclient.backend.Constants.DELIM;
 
 public class KeyboardActivity extends AppCompatActivity implements View.OnTouchListener, View.OnClickListener, TextWatcher {
     public static final String TAG = "KeyboardActivity";

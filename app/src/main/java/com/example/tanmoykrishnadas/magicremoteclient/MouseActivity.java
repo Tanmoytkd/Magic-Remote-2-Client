@@ -7,16 +7,17 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.view.VelocityTracker;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
+import com.example.tanmoykrishnadas.magicremoteclient.backend.BluetoothConnectionService;
 
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Calendar;
 
-import static com.example.tanmoykrishnadas.magicremoteclient.Constants.DELIM;
+import static com.example.tanmoykrishnadas.magicremoteclient.backend.Constants.DELIM;
 
 public class MouseActivity extends AppCompatActivity implements View.OnClickListener {
     public static final String TAG = "MouseActivity";

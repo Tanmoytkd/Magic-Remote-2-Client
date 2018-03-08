@@ -10,6 +10,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
+import com.example.tanmoykrishnadas.magicremoteclient.backend.GlideApp;
 
 import static java.lang.Thread.sleep;
 
@@ -18,9 +19,12 @@ public class SplashScreen extends AppCompatActivity {
     FrameLayout frame;
     ImageView splashForeground, splashBackground;
     AutoTransition transition;
+    boolean started = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        started = true;
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash_screen);
 
@@ -28,8 +32,8 @@ public class SplashScreen extends AppCompatActivity {
         splashForeground = findViewById(R.id.splashForeground);
         splashBackground = findViewById(R.id.splashBackground);
 
-        Glide.with(this).load(R.drawable.splash_background_screen).into(splashBackground);
         Glide.with(this).load(R.drawable.splash_foreground_screen).into(splashForeground);
+        //GlideApp.with(this).load(R.drawable.splash_background_screen).placeholder(R.drawable.splash_background_placeholder).into(splashBackground);
 
         transition = new AutoTransition();
         transition.setDuration(1000);
@@ -37,18 +41,26 @@ public class SplashScreen extends AppCompatActivity {
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        started = false;
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        started = false;
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
-
-        splashBackground.setOnClickListener(e->{
-            TransitionManager.beginDelayedTransition(frame, transition);
-            splashForeground.setVisibility(View.VISIBLE);
-        });
+        started = true;
 
         new Thread(() -> {
             try {
                 sleep(200);
-                runOnUiThread(()->{
+                runOnUiThread(() -> {
                     TransitionManager.beginDelayedTransition(frame, transition);
                     splashForeground.setVisibility(View.VISIBLE);
                 });
@@ -56,8 +68,10 @@ public class SplashScreen extends AppCompatActivity {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            startActivity(new Intent(SplashScreen.this, MainActivity.class));
-            finish();
+            if (started) {
+                startActivity(new Intent(SplashScreen.this, MainActivity.class));
+                finish();
+            }
         }).start();
     }
 }

@@ -1,4 +1,4 @@
-package com.example.tanmoykrishnadas.magicremoteclient;
+package com.example.tanmoykrishnadas.magicremoteclient.backend;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -12,36 +12,52 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.util.UUID;
 
 /**
  * Created by Tanmoy Krishna Das on 2/16/2018.
+ * This piece of code is part of the project "Magic Remote 2 Client"
  */
 
 public class BluetoothConnectionService {
+
+    private static BluetoothConnectionService instance = new BluetoothConnectionService();
+
+    private static final String TAG = "BluetoothService";
+    //    private static final UUID MY_UUID_INSECURE = UUID.fromString(Constants.UUID);
+    private String bluetoothStatus = "disconnected";
+
+    private final BluetoothAdapter bluetoothAdapter;
+    private Context context;
+
+    private startConnectionThread startConnectionThread;
+    private ReadWriteThread readWriteThread;
+    private BluetoothDevice RemoteDevice;
+    private UUID deviceUUID;
+    private ProgressDialog progressDialogBox;
+
     class startConnectionThread extends Thread {
         private BluetoothSocket clientSocket;
 
-        public startConnectionThread(BluetoothDevice RemoteDevice, UUID uuid) {
-            BluetoothConnectionService.this.Remotedevice = RemoteDevice;
+        startConnectionThread(BluetoothDevice RemoteDevice, UUID uuid) {
+            BluetoothConnectionService.this.RemoteDevice = RemoteDevice;
             BluetoothConnectionService.this.deviceUUID = uuid;
         }
 
         public void run() {
-            BluetoothSocket tmp = null;
+            BluetoothSocket tmp;
 //            Log.i(TAG, "Run Connect Thread");
-            bluetoothStatus = "connecting";
+            setBluetoothStatus("connecting");
             try {
                 //create a client clientSocket
-                tmp = Remotedevice.createRfcommSocketToServiceRecord(deviceUUID);
+                tmp = RemoteDevice.createRfcommSocketToServiceRecord(deviceUUID);
 
                 clientSocket = tmp; //the main clientSocket is client clientSocket now
                 bluetoothAdapter.cancelDiscovery(); //because client is not needed to be discovered
 
                 try {
                     clientSocket.connect(); //connect clientSocket
-                    bluetoothStatus = "connected";
+                    setBluetoothStatus("connected");
                 } catch (IOException e) {
                     e.printStackTrace();
                     try {
@@ -49,17 +65,17 @@ public class BluetoothConnectionService {
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     } finally {
-                        bluetoothStatus = "disconnected";
+                        setBluetoothStatus("disconnected");
                     }
                 }
-                onConnected(clientSocket, Remotedevice);
+                onConnected(clientSocket);
             } catch (IOException e) {
                 e.printStackTrace();
-                bluetoothStatus = "disconnected";
+                setBluetoothStatus("disconnected");
             }
         }
 
-        public void disconnect() {
+        void disconnect() {
             //Log.d(TAG, "Closing Client Socket");
             try {
                 clientSocket.close();
@@ -67,7 +83,7 @@ public class BluetoothConnectionService {
                 e.printStackTrace();
                 Log.e(TAG, "Failed to close Client Socket");
             } finally {
-                bluetoothStatus = "disconnected";
+                setBluetoothStatus("disconnected");
             }
         }
     }
@@ -78,18 +94,16 @@ public class BluetoothConnectionService {
         private final InputStream inputStream;
         private final OutputStream outputStream;
 
-        public ReadWriteThread(BluetoothSocket socket) {
+        ReadWriteThread(BluetoothSocket socket) {
             //Log.d(TAG, "ReadWriteThread Started");
             clientBluetoothSocket = socket;
             InputStream tempI = null;
             OutputStream tempO = null;
 
             /// dismiss progressDialogBox
-            progressDialogeBox.dismiss();
+            progressDialogBox.dismiss();
 
-            ((Activity) context).runOnUiThread(() -> {
-                Toast.makeText(context, "Connection Successful", Toast.LENGTH_LONG).show();
-            });
+            ((Activity) context).runOnUiThread(() -> Toast.makeText(context, "Connection Successful", Toast.LENGTH_LONG).show());
 
             try {
                 tempI = clientBluetoothSocket.getInputStream();
@@ -104,7 +118,6 @@ public class BluetoothConnectionService {
         }
 
 
-
         public void run() {
             byte[] buffer = new byte[1024];
             int bytes;
@@ -117,7 +130,7 @@ public class BluetoothConnectionService {
                     String incomingMessage = new String(buffer, 0, bytes);
                     Log.e(TAG, "Input Stream: " + incomingMessage);
                 } catch (IOException e) {
-                    bluetoothStatus = "disconnected";
+                    setBluetoothStatus("disconnected");
                     stopClient();
                     cancel();
                     e.printStackTrace();
@@ -128,8 +141,8 @@ public class BluetoothConnectionService {
             Log.e(TAG, "Input Aborted");
         }
 
-        public void write(byte[] bytes) {
-            String text = new String(bytes, Charset.defaultCharset());
+        void write(byte[] bytes) {
+//            String text = new String(bytes, Charset.defaultCharset());
             //Log.d(TAG, "write: writing to outputStream " + text);
             try {
                 outputStream.write(bytes);
@@ -140,7 +153,7 @@ public class BluetoothConnectionService {
         }
 
 
-        public void cancel() {
+        void cancel() {
             try {
                 clientBluetoothSocket.close();
             } catch (IOException e) {
@@ -149,60 +162,45 @@ public class BluetoothConnectionService {
         }
     }
 
-    private static BluetoothConnectionService instance = new BluetoothConnectionService();
-
-    public static final String TAG = "BluetoothService";
-    private static final UUID MY_UUID_INSECURE = UUID.fromString(Constants.UUID);
-    private static String bluetoothStatus = "disconnected";
-
-    public static void setBluetoothStatus(String bluetoothStatus) {
-        BluetoothConnectionService.bluetoothStatus = bluetoothStatus;
+    public void setBluetoothStatus(String bluetoothStatus) {
+        this.bluetoothStatus = bluetoothStatus;
     }
 
-    public static String getBluetoothStatus() {
+    public String getBluetoothStatus() {
         return bluetoothStatus;
     }
-
-    private final BluetoothAdapter bluetoothAdapter;
-    Context context;
-
-    private startConnectionThread startConnectionThread;
-    private ReadWriteThread readWriteThread;
-    private BluetoothDevice Remotedevice;
-    private UUID deviceUUID;
-    private ProgressDialog progressDialogeBox;
 
     private BluetoothConnectionService() {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
-    public static void setContext(Context context) {
+    public void setContext(Context context) {
         instance.context = context;
     }
 
     public static BluetoothConnectionService getInstance(Context context) {
-        setContext(context);
+        instance.setContext(context);
         return instance;
     }
 
     public void startClient(BluetoothDevice device, UUID uuid) {
-        progressDialogeBox = ProgressDialog.show(context, "Connecting Bluetooth", "Please wait...", true);
+        progressDialogBox = ProgressDialog.show(context, "Connecting Bluetooth", "Please wait...", true);
         startConnectionThread = new startConnectionThread(device, uuid); //create a new thread for connection
         startConnectionThread.start();
     }
 
     public void stopClient() {
-        bluetoothStatus = "disconncted";
-        if(startConnectionThread!=null) {
+        setBluetoothStatus("disconncted");
+        if (startConnectionThread != null) {
             startConnectionThread.disconnect();
         }
     }
 
-    private void onConnected(BluetoothSocket clientSocket, BluetoothDevice device) {
+    private void onConnected(BluetoothSocket clientSocket) {
         readWriteThread = new ReadWriteThread(clientSocket);
         readWriteThread.start();
     }
-    
+
     public void write(byte[] msg) {
         readWriteThread.write(msg);
     }

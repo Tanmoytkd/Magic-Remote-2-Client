@@ -5,9 +5,9 @@ import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -17,15 +17,16 @@ import java.util.ArrayList;
 
 /**
  * Created by Tanmoy Krishna Das on 2/22/2018.
+ * This piece of code is part of the project "Magic Remote 2 Client"
  */
 
 class DeviceHolder extends RecyclerView.ViewHolder {
     View view;
-    ImageView icon;
+    private ImageView icon;
     TextView deviceName, deviceAddress;
 
 
-    public DeviceHolder(View itemView) {
+    DeviceHolder(View itemView) {
         super(itemView);
         view = itemView;
         icon = itemView.findViewById(R.id.icon);
@@ -35,40 +36,56 @@ class DeviceHolder extends RecyclerView.ViewHolder {
 }
 
 class DeviceAdapter extends RecyclerView.Adapter<DeviceHolder> {
-    ArrayList<BluetoothDevice> devices;
-    MainActivity activity;
+    private static final String TAG = "DeviceAdapter";
+    private ArrayList<BluetoothDevice> devices;
+    private Activity activity;
+    private MainActivity mainActivity;
+    private HomeActivity homeActivity;
 
-    public DeviceAdapter(ArrayList<BluetoothDevice> devices, MainActivity activity) {
+    DeviceAdapter(ArrayList<BluetoothDevice> devices, MainActivity activity) {
         this.devices = devices;
         this.activity = activity;
+        this.mainActivity = activity;
+    }
+
+    DeviceAdapter(ArrayList<BluetoothDevice> devices, HomeActivity homeActivity) {
+        this.devices = devices;
+        this.activity = homeActivity;
+        this.homeActivity = homeActivity;
     }
 
 
+    @NonNull
     @Override
-    public DeviceHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public DeviceHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = activity.getLayoutInflater().inflate(R.layout.each_device, parent, false);
         return new DeviceHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(DeviceHolder holder, int position) {
+    public void onBindViewHolder(@NonNull DeviceHolder holder, int position) {
         BluetoothDevice device = devices.get(position);
 
         holder.deviceName.setText(device.getName());
         holder.deviceAddress.setText(device.getAddress());
 
-        holder.view.setOnClickListener(e->{
-            Log.d(activity.TAG, "Start pairing");
-            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                Log.d(activity.TAG, "Starting to pair...");
-                if(device.getBondState()!=BluetoothDevice.BOND_BONDED) {
-                    device.createBond();
-                } else {
-                    activity.startConnection(device);
-                }
-                IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-                activity.registerReceiver(activity.bondingReceiver, filter);
-                activity.bondingReceiverFlag=true;
+        holder.view.setOnClickListener(e -> {
+            Log.d(TAG, "Start pairing");
+            Log.d(TAG, "Starting to pair...");
+            if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+                device.createBond();
+            } else {
+                if (homeActivity != null) homeActivity.startConnection(device);
+                else if (mainActivity != null) mainActivity.startConnection(device);
+            }
+            IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+
+            if (homeActivity != null) {
+                activity.registerReceiver(homeActivity.bondingReceiver, filter);
+                homeActivity.bondingReceiverFlag = true;
+            } else if (mainActivity != null) {
+                activity.registerReceiver(homeActivity.bondingReceiver, filter);
+                homeActivity.bondingReceiverFlag = true;
             }
         });
 

@@ -1,4 +1,4 @@
-package com.example.tanmoykrishnadas.magicremoteclient;
+package com.example.tanmoykrishnadas.magicremoteclient.backend;
 
 /**
  * Created by Tanmoy Krishna Das on 2/16/2018.
