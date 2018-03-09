@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:visibility="gone"
-            app:srcCompat="@drawable/ring" />
+            app:srcCompat="@drawable/ring_colored" />
 
     </FrameLayout>
 </RelativeLayout>

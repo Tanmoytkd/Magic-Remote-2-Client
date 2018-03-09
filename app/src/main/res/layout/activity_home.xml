@@ -93,11 +93,59 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/divider">
 
+        <android.support.constraint.ConstraintLayout
+            android:id="@+id/controlButtons"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <FrameLayout
+                android:id="@+id/leftButtons"
+                android:layout_width="115dp"
+                android:layout_height="115dp"
+                android:layout_marginTop="8dp"
+                app:layout_constraintEnd_toStartOf="@+id/middleButtons"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/middleButtons">
+
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/middleButtons"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_marginTop="8dp"
+                app:layout_constraintEnd_toStartOf="@+id/rightButtons"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@+id/leftButtons"
+                app:layout_constraintTop_toTopOf="parent">
+
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/rightButtons"
+                android:layout_width="115dp"
+                android:layout_height="120dp"
+                android:layout_marginTop="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@+id/middleButtons"
+                app:layout_constraintTop_toTopOf="@+id/middleButtons">
+
+            </FrameLayout>
+        </android.support.constraint.ConstraintLayout>
+
         <android.support.v7.widget.RecyclerView
             android:id="@+id/deviceList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:layoutManager="android.support.v7.widget.LinearLayoutManager" />
+            app:layoutManager="android.support.v7.widget.LinearLayoutManager" >
+
+        </android.support.v7.widget.RecyclerView>
     </FrameLayout>
 
 
