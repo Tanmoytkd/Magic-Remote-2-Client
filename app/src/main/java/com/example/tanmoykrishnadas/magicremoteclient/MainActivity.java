@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
         if(bluetoothAdapter!=null) {
             previouslyEnabled = bluetoothAdapter.isEnabled();
-            bluetoothConnection = BluetoothConnectionService.getInstance(MainActivity.this);
+            bluetoothConnection = BluetoothConnectionService.getInstance();
         } else {
             AlertDialog noBluetoothDialog = new AlertDialog.Builder(this).setTitle("Bluetooth Unavailable").setMessage("Sorry, your device does not support bluetooth. Our app can not work here").setPositiveButton("Exit", new DialogInterface.OnClickListener() {
                 @Override
@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (bluetoothConnection != null) bluetoothConnection.setContext(MainActivity.this);
+//        if (bluetoothConnection != null) bluetoothConnection.setContext(MainActivity.this);
     }
 
     @Override

@@ -49,7 +49,7 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
         super.onResume();
         keyboardOn = true;
         activityManager.start();
-        if(bluetoothConnection!=null) bluetoothConnection.setContext(KeyboardActivity.this);
+//        if(bluetoothConnection!=null) bluetoothConnection.setContext(KeyboardActivity.this);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_keyboard);
 
-        bluetoothConnection = BluetoothConnectionService.getInstance(KeyboardActivity.this);
+        bluetoothConnection = BluetoothConnectionService.getInstance();
 
         typeHereEditText = (EditText) findViewById(R.id.typeHereEditText);
         ctrlButton = (Button) findViewById(R.id.ctrlButton);

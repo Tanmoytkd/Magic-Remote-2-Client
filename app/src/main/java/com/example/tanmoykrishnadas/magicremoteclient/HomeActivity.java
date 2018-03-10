@@ -9,13 +9,18 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
+import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
+import com.transitionseverywhere.*;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -32,6 +37,8 @@ import static java.lang.Thread.sleep;
 public class HomeActivity extends AppCompatActivity {
     public static String TAG = "HomeActivity";
     public static boolean searching = false;
+    public static boolean activityRunning = true;
+
 
     public static void setSearching(boolean searching) {
         HomeActivity.searching = searching;
@@ -52,31 +59,61 @@ public class HomeActivity extends AppCompatActivity {
     private volatile boolean BTStatusReceiverFlag;
     private volatile boolean bluetoothPreviouslyEnabled;
 
+    Animation slideUp, slideDown;
     Animation ringRotate;
     FrameLayout connectButtonFrame;
     TextView connectionStatus;
     ImageView ring;
+    FrameLayout lower, middleButtons;
+    ConstraintLayout controlButtons;
 
-
+    ImageView mouse, keyboard, mouseKeybord;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        activityRunning = true;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        deviceList = findViewById(R.id.deviceList);
-        connectButtonFrame = findViewById(R.id.connectButtonFrame);
-        connectionStatus = findViewById(R.id.connectionStatus);
-        ring = findViewById(R.id.ring);
-        ringRotate = AnimationUtils.loadAnimation(HomeActivity.this, R.anim.rotate);
-
+        initializeViews();
         doBluetoothAdapterSetup();
         enableBT();
+
+        mouse.setOnClickListener(e->{
+            startActivity(new Intent(HomeActivity.this, MouseActivity.class));
+        });
+
+        keyboard.setOnClickListener(e->{
+            startActivity(new Intent(HomeActivity.this, KeyboardActivity.class));
+        });
 
         connectButtonFrame.setOnClickListener(v -> {
             if (!searching && !bluetoothConnection.getBluetoothStatus().equals("connected")) {
                 scanDevices();
                 searching = true;
+                Thread connectingNotifier = new Thread() {
+                    @Override
+                    public void run() {
+                        while (activityRunning) {
+                            try {
+                                if (bluetoothConnection.getBluetoothStatus().equals("connecting")) {
+                                    runOnUiThread(() -> {
+                                        connectionStatus.setText("Connecting");
+                                    });
+                                } else if (bluetoothConnection.isConnected()) {
+                                    runOnUiThread(() -> {
+                                        connectionStatus.setText("Disconnect");
+                                    });
+                                }
+                                    sleep(90);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                };
+                connectingNotifier.start();
+
                 Thread searchingNotifier = new Thread(() -> {
                     while (searching) {
                         try {
@@ -89,9 +126,9 @@ public class HomeActivity extends AppCompatActivity {
                         }
                     }
                     //when searching completed
-                    runOnUiThread(()->{
-                        if(ringRotate!=null) {
-                            if(ring!=null) ring.clearAnimation();
+                    runOnUiThread(() -> {
+                        if (ringRotate != null) {
+                            if (ring != null) ring.clearAnimation();
                             ringRotate.cancel();
                             ringRotate.reset();
                         }
@@ -111,12 +148,28 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
+    private void initializeViews() {
+        deviceList = findViewById(R.id.deviceList);
+        connectButtonFrame = findViewById(R.id.connectButtonFrame);
+        connectionStatus = findViewById(R.id.connectionStatus);
+        ring = findViewById(R.id.ring);
+        ringRotate = AnimationUtils.loadAnimation(HomeActivity.this, R.anim.rotate);
+        slideUp = AnimationUtils.loadAnimation(HomeActivity.this, R.anim.slide_up);
+        slideDown = AnimationUtils.loadAnimation(HomeActivity.this, R.anim.slide_down);
+        lower = findViewById(R.id.lower);
+        controlButtons = findViewById(R.id.controlButtons);
+        mouse = findViewById(R.id.mouse);
+        keyboard = findViewById(R.id.keyboard);
+        mouseKeybord = findViewById(R.id.mouseKeyboard);
+        middleButtons = findViewById(R.id.middleButtons);
+    }
+
     private void doBluetoothAdapterSetup() {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         if (bluetoothAdapter != null) {
             bluetoothPreviouslyEnabled = bluetoothAdapter.isEnabled();
-            bluetoothConnection = BluetoothConnectionService.getInstance(HomeActivity.this);
+            bluetoothConnection = BluetoothConnectionService.getInstance();
         } else {
             AlertDialog noBluetoothDialog = new AlertDialog.Builder(this).setTitle("Bluetooth Unavailable").setMessage("Sorry, your device does not support bluetooth. Our app can not work here").setPositiveButton("Exit", new DialogInterface.OnClickListener() {
                 @Override
@@ -131,13 +184,62 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (bluetoothConnection != null) bluetoothConnection.setContext(HomeActivity.this);
+        activityRunning = true;
+
+        Thread lowerPortion = new Thread() {
+            @Override
+            public void run() {
+                while (activityRunning) {
+                    if (!bluetoothConnection.isConnected() && (deviceList.getVisibility() != View.VISIBLE || controlButtons.getVisibility() != View.GONE)) {
+                        runOnUiThread(() -> {
+//                            ChangeBounds transition = new ChangeBounds();
+//                            transition.setDuration(600);
+//                            TransitionManager.beginDelayedTransition(lower, transition);
+                            if(controlButtons.getVisibility()==View.VISIBLE) controlButtons.startAnimation(slideDown);
+                            controlButtons.setVisibility(View.GONE);
+
+                            deviceList.setVisibility(View.VISIBLE);
+                            deviceList.startAnimation(slideUp);
+                        });
+                    } else if (bluetoothConnection.isConnected() && (deviceList.getVisibility() != View.GONE || controlButtons.getVisibility() != View.VISIBLE)) {
+                        runOnUiThread(() -> {
+                            //Toast.makeText(HomeActivity.this, "connected", Toast.LENGTH_SHORT).show();
+//                            ChangeBounds transition = new ChangeBounds();
+//                            transition.setInterpolator(new LinearInterpolator());
+//                            transition.setDuration(600);
+
+//                            TransitionManager.beginDelayedTransition(lower, transition);
+                            if(controlButtons.getVisibility()==View.VISIBLE) deviceList.startAnimation(slideDown);
+                            deviceList.setVisibility(View.GONE);
+
+                            controlButtons.setVisibility(View.VISIBLE);
+                            controlButtons.startAnimation(slideUp);
+                        });
+                    }
+                    try {
+                        sleep(90);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+        lowerPortion.start();
+
+//        if (bluetoothConnection != null) bluetoothConnection.setContext(HomeActivity.this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        activityRunning = false;
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         disconnect();
+        activityRunning = false;
         searching = false;
         if (BTStatusReceiverFlag) unregisterReceiver(BTStatusReceiver);
         if (deviceFoundReceiverFlag) unregisterReceiver(deviceInfoReceiver);
@@ -228,20 +330,20 @@ public class HomeActivity extends AppCompatActivity {
                 deviceList.setAdapter(new DeviceAdapter(devices, HomeActivity.this));
                 stopScanning();
 
-                new Thread(()->{
-                    while(bluetoothConnection.getBluetoothStatus().equals("connected")) {
+                new Thread(() -> {
+                    while (bluetoothConnection.getBluetoothStatus().equals("connected")) {
                         try {
                             sleep(90);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     }
-                    runOnUiThread(()->connectionStatus.setText("Connect"));
+                    runOnUiThread(() -> connectionStatus.setText("Connect"));
                 }).start();
             } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
                 Log.d(TAG, "Search Completed");
                 searching = false;
-                if(!connectionStatus.getText().toString().equals("Disconnect")) {
+                if (!connectionStatus.getText().toString().equals("Disconnect")) {
                     connectionStatus.setText("Connect");
                 }
             } else if (BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED.equals(action)) {

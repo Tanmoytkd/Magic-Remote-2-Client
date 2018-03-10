@@ -28,13 +28,17 @@ public class BluetoothConnectionService {
     private String bluetoothStatus = "disconnected";
 
     private final BluetoothAdapter bluetoothAdapter;
-    private Context context;
+//    private Context context;
 
     private startConnectionThread startConnectionThread;
     private ReadWriteThread readWriteThread;
     private BluetoothDevice RemoteDevice;
     private UUID deviceUUID;
-    private ProgressDialog progressDialogBox;
+//    private ProgressDialog progressDialogBox;
+
+    public boolean isConnected() {
+        return bluetoothStatus.equals("connected");
+    }
 
     class startConnectionThread extends Thread {
         private BluetoothSocket clientSocket;
@@ -101,9 +105,9 @@ public class BluetoothConnectionService {
             OutputStream tempO = null;
 
             /// dismiss progressDialogBox
-            progressDialogBox.dismiss();
+            //progressDialogBox.dismiss();
 
-            ((Activity) context).runOnUiThread(() -> Toast.makeText(context, "Connection Successful", Toast.LENGTH_LONG).show());
+            //((Activity) context).runOnUiThread(() -> Toast.makeText(context, "Connection Successful", Toast.LENGTH_LONG).show());
 
             try {
                 tempI = clientBluetoothSocket.getInputStream();
@@ -174,17 +178,18 @@ public class BluetoothConnectionService {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
-    public void setContext(Context context) {
-        instance.context = context;
-    }
+//    public void setContext(Context context) {
+//        instance.context = context;
+//    }
 
-    public static BluetoothConnectionService getInstance(Context context) {
-        instance.setContext(context);
+    public static BluetoothConnectionService getInstance() {
+        //instance.setContext(context);
         return instance;
     }
 
+
     public void startClient(BluetoothDevice device, UUID uuid) {
-        progressDialogBox = ProgressDialog.show(context, "Connecting Bluetooth", "Please wait...", true);
+        //progressDialogBox = ProgressDialog.show(context, "Connecting Bluetooth", "Please wait...", true);
         startConnectionThread = new startConnectionThread(device, uuid); //create a new thread for connection
         startConnectionThread.start();
     }

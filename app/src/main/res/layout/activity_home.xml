@@ -93,10 +93,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/divider">
 
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/deviceList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layoutManager="android.support.v7.widget.LinearLayoutManager">
+
+        </android.support.v7.widget.RecyclerView>
+
         <android.support.constraint.ConstraintLayout
             android:id="@+id/controlButtons"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -112,6 +121,19 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="@+id/middleButtons">
 
+                <ImageView
+                    android:id="@+id/noMouse"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:layout_gravity="center"
+                    app:srcCompat="@drawable/nomouse" />
+
+                <ImageView
+                    android:id="@+id/mouse"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    app:srcCompat="@drawable/mouse" />
             </FrameLayout>
 
             <FrameLayout
@@ -123,6 +145,20 @@
                 app:layout_constraintHorizontal_bias="0.5"
                 app:layout_constraintStart_toEndOf="@+id/leftButtons"
                 app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:id="@+id/noMouseKeyboard"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:layout_gravity="center"
+                    app:srcCompat="@drawable/nomousekeyboard" />
+
+                <ImageView
+                    android:id="@+id/mouseKeyboard"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    app:srcCompat="@drawable/mousekeyboard" />
 
             </FrameLayout>
 
@@ -136,16 +172,22 @@
                 app:layout_constraintStart_toEndOf="@+id/middleButtons"
                 app:layout_constraintTop_toTopOf="@+id/middleButtons">
 
+                <ImageView
+                    android:id="@+id/noKeyboard"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:layout_gravity="center"
+                    app:srcCompat="@drawable/nokeyboard" />
+
+                <ImageView
+                    android:id="@+id/keyboard"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    app:srcCompat="@drawable/keyboard" />
             </FrameLayout>
         </android.support.constraint.ConstraintLayout>
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/deviceList"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:layoutManager="android.support.v7.widget.LinearLayoutManager" >
-
-        </android.support.v7.widget.RecyclerView>
     </FrameLayout>
 
 

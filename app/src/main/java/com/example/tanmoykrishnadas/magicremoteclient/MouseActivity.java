@@ -59,7 +59,7 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mouse);
 
-        bluetoothConnection = BluetoothConnectionService.getInstance(MouseActivity.this);
+        bluetoothConnection = BluetoothConnectionService.getInstance();
 
         context = this;
 
@@ -241,7 +241,7 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
         super.onResume();
         keyboardOn = true;
         activityManager.start();
-        if(bluetoothConnection!=null) bluetoothConnection.setContext(MouseActivity.this);
+//        if(bluetoothConnection!=null) bluetoothConnection.setContext(MouseActivity.this);
     }
 
     @Override
