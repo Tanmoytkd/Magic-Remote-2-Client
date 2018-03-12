@@ -47,15 +47,18 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
     @Override
     protected void onResume() {
         super.onResume();
-        keyboardOn = true;
-        activityManager.start();
 //        if(bluetoothConnection!=null) bluetoothConnection.setContext(KeyboardActivity.this);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        keyboardOn = false;
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        keyboardOn = false;
     }
 
     @Override
@@ -118,6 +121,9 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
         ctrlShiftZButton.setOnClickListener(this);
         altF4Button.setOnClickListener(this);
         typeHereEditText.addTextChangedListener(this);
+
+        keyboardOn = true;
+        activityManager.start();
     }
 
 

@@ -12,6 +12,7 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Calendar;
 import java.util.UUID;
 
 /**
@@ -34,10 +35,15 @@ public class BluetoothConnectionService {
     private ReadWriteThread readWriteThread;
     private BluetoothDevice RemoteDevice;
     private UUID deviceUUID;
+    private long lastMessageReceiveTime = Calendar.getInstance().getTimeInMillis();
 //    private ProgressDialog progressDialogBox;
 
     public boolean isConnected() {
         return bluetoothStatus.equals("connected");
+    }
+
+    public long getLastMessageReceiveTime() {
+        return lastMessageReceiveTime;
     }
 
     class startConnectionThread extends Thread {
@@ -131,6 +137,7 @@ public class BluetoothConnectionService {
                     Log.e(TAG, "Trying to read input stream");
                     bytes = inputStream.read(buffer);
 
+                    lastMessageReceiveTime = Calendar.getInstance().getTimeInMillis();
                     String incomingMessage = new String(buffer, 0, bytes);
                     Log.e(TAG, "Input Stream: " + incomingMessage);
                 } catch (IOException e) {

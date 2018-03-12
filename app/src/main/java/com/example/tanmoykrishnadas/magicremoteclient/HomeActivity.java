@@ -14,13 +14,11 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
-import com.transitionseverywhere.*;
+
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -28,8 +26,10 @@ import android.widget.Toast;
 
 import com.example.tanmoykrishnadas.magicremoteclient.backend.BluetoothConnectionService;
 import com.example.tanmoykrishnadas.magicremoteclient.backend.Constants;
+import com.example.tanmoykrishnadas.magicremoteclient.backend.GlideApp;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.UUID;
 
 import static java.lang.Thread.sleep;
@@ -67,7 +67,10 @@ public class HomeActivity extends AppCompatActivity {
     FrameLayout lower, middleButtons;
     ConstraintLayout controlButtons;
 
-    ImageView mouse, keyboard, mouseKeybord;
+    ImageView mouse;
+    ImageView keyboard;
+    ImageView mouseKeyboard;
+    ImageView connectionQuality;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,11 +82,11 @@ public class HomeActivity extends AppCompatActivity {
         doBluetoothAdapterSetup();
         enableBT();
 
-        mouse.setOnClickListener(e->{
+        mouse.setOnClickListener(e -> {
             startActivity(new Intent(HomeActivity.this, MouseActivity.class));
         });
 
-        keyboard.setOnClickListener(e->{
+        keyboard.setOnClickListener(e -> {
             startActivity(new Intent(HomeActivity.this, KeyboardActivity.class));
         });
 
@@ -105,7 +108,7 @@ public class HomeActivity extends AppCompatActivity {
                                         connectionStatus.setText("Disconnect");
                                     });
                                 }
-                                    sleep(90);
+                                sleep(90);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
@@ -160,8 +163,9 @@ public class HomeActivity extends AppCompatActivity {
         controlButtons = findViewById(R.id.controlButtons);
         mouse = findViewById(R.id.mouse);
         keyboard = findViewById(R.id.keyboard);
-        mouseKeybord = findViewById(R.id.mouseKeyboard);
+        mouseKeyboard = findViewById(R.id.mouseKeyboard);
         middleButtons = findViewById(R.id.middleButtons);
+        connectionQuality = findViewById(R.id.connectionQuality);
     }
 
     private void doBluetoothAdapterSetup() {
@@ -186,44 +190,58 @@ public class HomeActivity extends AppCompatActivity {
         super.onResume();
         activityRunning = true;
 
-        Thread lowerPortion = new Thread() {
-            @Override
-            public void run() {
-                while (activityRunning) {
-                    if (!bluetoothConnection.isConnected() && (deviceList.getVisibility() != View.VISIBLE || controlButtons.getVisibility() != View.GONE)) {
-                        runOnUiThread(() -> {
-//                            ChangeBounds transition = new ChangeBounds();
-//                            transition.setDuration(600);
-//                            TransitionManager.beginDelayedTransition(lower, transition);
-                            if(controlButtons.getVisibility()==View.VISIBLE) controlButtons.startAnimation(slideDown);
-                            controlButtons.setVisibility(View.GONE);
+        Thread connectionQualityManager = new Thread(() -> {
+            while (activityRunning) {
+                try {
+                    long waitTime = Calendar.getInstance().getTimeInMillis() - bluetoothConnection.getLastMessageReceiveTime();
 
-                            deviceList.setVisibility(View.VISIBLE);
-                            deviceList.startAnimation(slideUp);
-                        });
-                    } else if (bluetoothConnection.isConnected() && (deviceList.getVisibility() != View.GONE || controlButtons.getVisibility() != View.VISIBLE)) {
-                        runOnUiThread(() -> {
-                            //Toast.makeText(HomeActivity.this, "connected", Toast.LENGTH_SHORT).show();
-//                            ChangeBounds transition = new ChangeBounds();
-//                            transition.setInterpolator(new LinearInterpolator());
-//                            transition.setDuration(600);
+                    int drawableId;
+                    if (!bluetoothConnection.isConnected()) drawableId = R.drawable.net_zero;
+                    else if (waitTime >= 10000) drawableId = R.drawable.net_one;
+                    else if (waitTime >= 5000) drawableId = R.drawable.net_two;
+                    else drawableId = R.drawable.net_three;
 
-//                            TransitionManager.beginDelayedTransition(lower, transition);
-                            if(controlButtons.getVisibility()==View.VISIBLE) deviceList.startAnimation(slideDown);
-                            deviceList.setVisibility(View.GONE);
+                    runOnUiThread(()->{
+                        GlideApp.with(HomeActivity.this).load(drawableId).into(connectionQuality);
+                    });
 
-                            controlButtons.setVisibility(View.VISIBLE);
-                            controlButtons.startAnimation(slideUp);
-                        });
-                    }
-                    try {
-                        sleep(90);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+
+                    sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
-        };
+        });
+        connectionQualityManager.start();
+
+        Thread lowerPortion = new Thread(() -> {
+            while (activityRunning) {
+                if (!bluetoothConnection.isConnected() && (deviceList.getVisibility() != View.VISIBLE || controlButtons.getVisibility() != View.GONE)) {
+                    runOnUiThread(() -> {
+                        if (controlButtons.getVisibility() == View.VISIBLE)
+                            controlButtons.startAnimation(slideDown);
+                        controlButtons.setVisibility(View.GONE);
+
+                        deviceList.setVisibility(View.VISIBLE);
+                        deviceList.startAnimation(slideUp);
+                    });
+                } else if (bluetoothConnection.isConnected() && (deviceList.getVisibility() != View.GONE || controlButtons.getVisibility() != View.VISIBLE)) {
+                    runOnUiThread(() -> {
+                        if (controlButtons.getVisibility() == View.VISIBLE)
+                            deviceList.startAnimation(slideDown);
+                        deviceList.setVisibility(View.GONE);
+
+                        controlButtons.setVisibility(View.VISIBLE);
+                        controlButtons.startAnimation(slideUp);
+                    });
+                }
+                try {
+                    sleep(90);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
         lowerPortion.start();
 
 //        if (bluetoothConnection != null) bluetoothConnection.setContext(HomeActivity.this);

@@ -18,6 +18,7 @@ import java.net.Socket;
 import java.util.Calendar;
 
 import static com.example.tanmoykrishnadas.magicremoteclient.backend.Constants.DELIM;
+import static java.lang.Thread.sleep;
 
 public class MouseActivity extends AppCompatActivity implements View.OnClickListener {
     public static final String TAG = "MouseActivity";
@@ -75,16 +76,8 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
 
         mousePad = (TextView) findViewById(R.id.mousePad);
 
-//        mousePad.setOnLongClickListener(new View.OnLongClickListener() {
-//            @Override
-//            public boolean onLongClick(View view) {
-//                String finalCommand = DELIM + "RIGHT_CLICK" + DELIM;
-//                bluetoothConnection.write(finalCommand.getBytes());
-//                return false;
-//            }
-//        });
-
-
+        keyboardOn = true;
+        activityManager.start();
 
         mousePad.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -185,34 +178,6 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
         }
     }
 
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-//        // Handle action bar item clicks here. The action bar will
-//        // automatically handle clicks on the Home/Up button, so long
-//        // as you specify a parent activity in AndroidManifest.xml.
-//        int id = item.getItemId();
-//
-//        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_connect) {
-////            ConnectPhoneTask connectPhoneTask = new ConnectPhoneTask();
-////            connectPhoneTask.execute(Constants.SERVER_IP); //try to connect to server in another thread
-//            Toast.makeText(this, "Connection Request", Toast.LENGTH_SHORT).show();
-//            //Log.d(TAG, "Connection Request");
-//            return true;
-//        }
-//
-//        return super.onOptionsItemSelected(item);
-        return true;
-    }
-
     //OnClick method is called when any of the buttons are pressed
     @Override
     public void onClick(View v) {
@@ -231,22 +196,23 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
         bluetoothConnection.write(finalCommand.getBytes());
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-    }
+
 
     @Override
     protected void onResume() {
         super.onResume();
         keyboardOn = true;
-        activityManager.start();
 //        if(bluetoothConnection!=null) bluetoothConnection.setContext(MouseActivity.this);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
         keyboardOn = false;
     }
 }
