@@ -18,9 +18,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity android:name=".MouseActivity" />
-        <activity android:name=".MainActivity">
-
-        </activity>
+        <activity android:name=".MainActivity"></activity>
         <activity android:name=".KeyboardActivity" />
         <activity android:name=".HomeActivity" />
         <activity android:name=".SplashScreen">
@@ -30,6 +28,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".MouseKeyboardActivity"></activity>
     </application>
 
 </manifest>

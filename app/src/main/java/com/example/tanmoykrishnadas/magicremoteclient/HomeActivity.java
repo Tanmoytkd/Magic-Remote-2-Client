@@ -90,6 +90,10 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(new Intent(HomeActivity.this, KeyboardActivity.class));
         });
 
+        mouseKeyboard.setOnClickListener(e -> {
+            startActivity(new Intent(HomeActivity.this, MouseKeyboardActivity.class));
+        });
+
         connectButtonFrame.setOnClickListener(v -> {
             if (!searching && !bluetoothConnection.getBluetoothStatus().equals("connected")) {
                 scanDevices();

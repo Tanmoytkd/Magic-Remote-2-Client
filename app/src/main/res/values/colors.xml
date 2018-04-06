@@ -10,4 +10,5 @@
     <color name="textColor">#082b40</color>
     <color name="textColorLight">#0c4566</color>
     <color name="buttonTextColor">#1f3e4f</color>
+    <color name="touchpad">#480099cc</color>
 </resources>
