@@ -266,7 +266,7 @@ public class HomeActivity extends AppCompatActivity {
         if (BTStatusReceiverFlag) unregisterReceiver(BTStatusReceiver);
         if (deviceFoundReceiverFlag) unregisterReceiver(deviceInfoReceiver);
         if (bondingReceiverFlag) unregisterReceiver(bondingReceiver);
-        if (!bluetoothPreviouslyEnabled && bluetoothAdapter != null) bluetoothAdapter.disable();
+        //if (!bluetoothPreviouslyEnabled && bluetoothAdapter != null) bluetoothAdapter.disable();
     }
 
     public void startConnection(BluetoothDevice remoteDevice) {

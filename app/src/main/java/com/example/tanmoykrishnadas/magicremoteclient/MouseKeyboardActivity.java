@@ -2,6 +2,7 @@ package com.example.tanmoykrishnadas.magicremoteclient;
 
 import android.content.Context;
 import android.content.Intent;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -37,7 +38,7 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
     private float distanceY = 0;
     private Calendar pressDownTime=Calendar.getInstance(), pressReleaseTime=Calendar.getInstance();
     BluetoothConnectionService bluetoothConnection;
-    private volatile boolean keyboardOn;
+    public static volatile boolean keyboardOn;
 
     private EditText typeText;
     private String previousText = "";
@@ -61,9 +62,6 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
                     e.printStackTrace();
                 }
 
-                runOnUiThread(()->{
-
-                });
                 try {
                     sleep(80);
                 } catch (InterruptedException e1) {
@@ -270,33 +268,49 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
     }
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) {
-        String ch = getExtraText(s, previousText);
-        if (ch.equals("")) {
-            return;
+        String bck = getBackspaces(s, previousText);
+        if(!bck.equals("")) {
+            String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + bck + DELIM;
+            bluetoothConnection.write(finalCommand.getBytes());
         }
 
-        String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + ch + DELIM;
-        bluetoothConnection.write(finalCommand.getBytes());
+        String ch = getExtraText(s, previousText);
+        if (!ch.equals("")) {
+            String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + ch + DELIM;
+            bluetoothConnection.write(finalCommand.getBytes());
+        }
+
         previousText = s.toString();
     }
     @Override
     public void afterTextChanged(Editable s) {
     }
 
-    private String getExtraText(CharSequence currentText, CharSequence previousText) {
-        String ch = "";
-        int currentTextLength = currentText.length();
-        int previousTextLength = previousText.length();
-        int difference = currentTextLength - previousTextLength;
-        if (currentTextLength > previousTextLength) {
-            ch = currentText.toString().substring(previousTextLength);
-        } else if (currentTextLength < previousTextLength) {
-            int diff = previousTextLength - currentTextLength;
-            ch = "";
-            for(int i=0; i<diff; i++) {
-                ch += "\b";
-            }
+    @NonNull
+    private String getBackspaces(CharSequence currentText, CharSequence previousText) {
+        int len = Math.min(currentText.length(), previousText.length());
+        int pos=0;
+        for(pos=0; pos<len; pos++) {
+            if(currentText.charAt(pos)!=previousText.charAt(pos)) break;
         }
+        int bck = previousText.length() - pos;
+
+        StringBuilder x = new StringBuilder();
+        for(int i=0; i<bck; i++) {
+            x.append('\b');
+        }
+        return x.toString();
+    }
+
+    private String getExtraText (CharSequence currentText, CharSequence previousText) {
+        String ch = "";
+        int minlen = Math.min(currentText.length(), previousText.length());
+        int pos = 0;
+
+        for(pos=0; pos<minlen; pos++) {
+            if(currentText.charAt(pos)!=previousText.charAt(pos)) break;
+        }
+        ch = currentText.toString().substring(pos);
 
         return ch;
     }
