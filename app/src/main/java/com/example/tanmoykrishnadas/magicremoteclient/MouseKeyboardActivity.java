@@ -77,37 +77,12 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
                             written = false;
                             String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + ch + DELIM;
                             bluetoothConnection.write(finalCommand.getBytes());
-                        } else {
-                            /*if(!written) {
-                                int startpos = s.length()-1;
-                                for(; startpos>=0; startpos--) {
-                                    char character = s.charAt(startpos);
-                                    if(character!=' ' && character!='\n') break;
-                                }
-                                for(; startpos>=0; startpos--) {
-                                    char character = s.charAt(startpos);
-                                    if(character==' ' || character=='\n') break;
-                                }
-
-                                String lastWord = s.substring(startpos+1);
-                                StringBuilder x = new StringBuilder();
-                                for (int i = 0; i < lastWord.length(); i++) {
-                                    x.append('\b');
-                                }
-                                String clearLastWord =  x.toString();
-
-                                String clearCommand = DELIM + "TYPE_CHARACTER" + DELIM + clearLastWord + DELIM;
-                                bluetoothConnection.write(clearCommand.getBytes());
-                                String writeCommand = DELIM + "TYPE_CHARACTER" + DELIM + lastWord + DELIM;
-                                bluetoothConnection.write(writeCommand.getBytes());
-                                written = true;
-                            }*/
                         }
                         previousText = s;
                     }
 
 
-                    sleep(50);
+                    sleep(150);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
