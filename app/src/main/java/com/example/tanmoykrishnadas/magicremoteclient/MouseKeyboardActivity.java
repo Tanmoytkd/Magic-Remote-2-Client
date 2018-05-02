@@ -2,6 +2,7 @@ package com.example.tanmoykrishnadas.magicremoteclient;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -10,6 +11,8 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -20,10 +23,11 @@ import com.example.tanmoykrishnadas.magicremoteclient.backend.BluetoothConnectio
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Calendar;
+import java.util.List;
 
 import static com.example.tanmoykrishnadas.magicremoteclient.backend.Constants.DELIM;
 
-public class MouseKeyboardActivity extends AppCompatActivity implements View.OnClickListener, TextWatcher {
+public class MouseKeyboardActivity extends AppCompatActivity implements View.OnClickListener {
     public static final String TAG = "MouseKeyboardActivity";
     Context context;
     Button leftButton, middleButton, rightButton;
@@ -36,7 +40,7 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
     private float initialY = 0;
     private float distanceX = 0;
     private float distanceY = 0;
-    private Calendar pressDownTime=Calendar.getInstance(), pressReleaseTime=Calendar.getInstance();
+    private Calendar pressDownTime = Calendar.getInstance(), pressReleaseTime = Calendar.getInstance();
     BluetoothConnectionService bluetoothConnection;
     public static volatile boolean keyboardOn;
 
@@ -44,28 +48,68 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
     private String previousText = "";
 
     private volatile boolean capsOn = false;
+    private volatile boolean boxBusy = false;
 
-    Button a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,caps;
+    Button a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, caps;
 
     Thread activityManager = new Thread() {
+        boolean written = false;
+
         @Override
         public void run() {
-            while(keyboardOn) {
+            while (keyboardOn) {
                 try {
                     String status = bluetoothConnection.getBluetoothStatus();
-                    if(!status.equals("connected")) {
+                    if (!status.equals("connected")) {
                         Log.e(TAG, "Disconnected from host");
                         finish();
                     }
+
+                    if (!boxBusy) {
+                        String s = typeText.getText().toString();
+                        String bck = getBackspaces(s, previousText);
+                        if (!bck.equals("")) {
+                            String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + bck + DELIM;
+                            bluetoothConnection.write(finalCommand.getBytes());
+                        }
+                        String ch = getExtraText(s, previousText);
+                        if (!ch.equals("")) {
+                            written = false;
+                            String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + ch + DELIM;
+                            bluetoothConnection.write(finalCommand.getBytes());
+                        } else {
+                            /*if(!written) {
+                                int startpos = s.length()-1;
+                                for(; startpos>=0; startpos--) {
+                                    char character = s.charAt(startpos);
+                                    if(character!=' ' && character!='\n') break;
+                                }
+                                for(; startpos>=0; startpos--) {
+                                    char character = s.charAt(startpos);
+                                    if(character==' ' || character=='\n') break;
+                                }
+
+                                String lastWord = s.substring(startpos+1);
+                                StringBuilder x = new StringBuilder();
+                                for (int i = 0; i < lastWord.length(); i++) {
+                                    x.append('\b');
+                                }
+                                String clearLastWord =  x.toString();
+
+                                String clearCommand = DELIM + "TYPE_CHARACTER" + DELIM + clearLastWord + DELIM;
+                                bluetoothConnection.write(clearCommand.getBytes());
+                                String writeCommand = DELIM + "TYPE_CHARACTER" + DELIM + lastWord + DELIM;
+                                bluetoothConnection.write(writeCommand.getBytes());
+                                written = true;
+                            }*/
+                        }
+                        previousText = s;
+                    }
+
+
                     sleep(50);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                }
-
-                try {
-                    sleep(80);
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace();
                 }
             }
         }
@@ -76,6 +120,18 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mouse_keyboard);
 
+        InputMethodManager imeManager = (InputMethodManager) getApplicationContext().getSystemService(INPUT_METHOD_SERVICE);
+        List<InputMethodInfo> list = imeManager.getInputMethodList();
+        for (InputMethodInfo el : list) {
+            Log.e(TAG, el.getPackageName());
+            Log.i(TAG, "ID: " + el.getId());
+            // do something to check whatever IME we want.
+            // in this case "com.google.android.googlequicksearchbox"
+        }
+//        final String id = "com.bangla.keyboard/.MyKeyboard";
+//        imeManager.setInputMethod(id);
+
+
         bluetoothConnection = BluetoothConnectionService.getInstance();
 
         context = this;
@@ -85,35 +141,34 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
         rightButton = (Button) findViewById(R.id.rightButton);
 
         a = findViewById(R.id.A);
-        b=findViewById(R.id.B);
-        c=findViewById(R.id.C);
-        d=findViewById(R.id.D);
-        e=findViewById(R.id.E);
-        f=findViewById(R.id.F);
-        g=findViewById(R.id.G);
-        h=findViewById(R.id.H);
-        i=findViewById(R.id.I);
-        j=findViewById(R.id.J);
-        k=findViewById(R.id.K);
-        l=findViewById(R.id.L);
-        m=findViewById(R.id.M);
-        n=findViewById(R.id.N);
-        o=findViewById(R.id.O);
-        p=findViewById(R.id.P);
-        q=findViewById(R.id.Q);
-        r=findViewById(R.id.R);
-        s=findViewById(R.id.S);
-        t=findViewById(R.id.T);
-        u=findViewById(R.id.U);
-        v=findViewById(R.id.V);
-        w=findViewById(R.id.W);
-        x=findViewById(R.id.X);
-        y=findViewById(R.id.Y);
-        z=findViewById(R.id.Z);
+        b = findViewById(R.id.B);
+        c = findViewById(R.id.C);
+        d = findViewById(R.id.D);
+        e = findViewById(R.id.E);
+        f = findViewById(R.id.F);
+        g = findViewById(R.id.G);
+        h = findViewById(R.id.H);
+        i = findViewById(R.id.I);
+        j = findViewById(R.id.J);
+        k = findViewById(R.id.K);
+        l = findViewById(R.id.L);
+        m = findViewById(R.id.M);
+        n = findViewById(R.id.N);
+        o = findViewById(R.id.O);
+        p = findViewById(R.id.P);
+        q = findViewById(R.id.Q);
+        r = findViewById(R.id.R);
+        s = findViewById(R.id.S);
+        t = findViewById(R.id.T);
+        u = findViewById(R.id.U);
+        v = findViewById(R.id.V);
+        w = findViewById(R.id.W);
+        x = findViewById(R.id.X);
+        y = findViewById(R.id.Y);
+        z = findViewById(R.id.Z);
         caps = findViewById(R.id.caps);
 
         typeText = (EditText) findViewById(R.id.typeText);
-        typeText.addTextChangedListener(this);
 
         middleButton.setOnClickListener(this);
         leftButton.setOnClickListener(this);
@@ -151,7 +206,7 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
             case MotionEvent.ACTION_DOWN:
                 pressDownTime = Calendar.getInstance();
 
-                if(pressDownTime.getTimeInMillis()-pressReleaseTime.getTimeInMillis()<180) {
+                if (pressDownTime.getTimeInMillis() - pressReleaseTime.getTimeInMillis() < 180) {
                     String finalCommand = DELIM + "LEFT_MOUSE_PRESS" + DELIM;
                     bluetoothConnection.write(finalCommand.getBytes());
                     mousePressed = true;
@@ -166,23 +221,23 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
                 distanceX = event.getX() - initialX;
                 distanceY = event.getY() - initialY;
 
-                double distance = Math.sqrt(distanceX*distanceX + distanceY*distanceY);
-                double multiplicationFactor = Math.max(1, distance/7.00);
+                double distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+                double multiplicationFactor = Math.max(1, distance / 7.00);
 //                Log.d("NEW_FEATURE", ""+distance);
 
                 initialX = event.getX();
                 initialY = event.getY();
                 if (distanceX != 0 || distanceY != 0) {
-                    String finalCommand = DELIM + "MOUSE_MOVE" + DELIM + distanceX*multiplicationFactor + DELIM + distanceY*multiplicationFactor + DELIM;
+                    String finalCommand = DELIM + "MOUSE_MOVE" + DELIM + distanceX * multiplicationFactor + DELIM + distanceY * multiplicationFactor + DELIM;
                     bluetoothConnection.write(finalCommand.getBytes());
                     mouseMoved = true;
                 }
                 break;
             case MotionEvent.ACTION_UP:
-                if(mousePressed) {
+                if (mousePressed) {
                     String finalCommand = DELIM + "LEFT_MOUSE_RELEASE" + DELIM;
                     bluetoothConnection.write(finalCommand.getBytes());
-                    mousePressed=false;
+                    mousePressed = false;
                 }
 
                 pressReleaseTime = Calendar.getInstance();
@@ -243,7 +298,6 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
     }
 
 
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -262,53 +316,29 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
         keyboardOn = false;
     }
 
-    @Override
-    public void beforeTextChanged(CharSequence s, int start, int count,
-                                  int after) {
-    }
-    @Override
-    public void onTextChanged(CharSequence s, int start, int before, int count) {
-        String bck = getBackspaces(s, previousText);
-        if(!bck.equals("")) {
-            String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + bck + DELIM;
-            bluetoothConnection.write(finalCommand.getBytes());
-        }
-
-        String ch = getExtraText(s, previousText);
-        if (!ch.equals("")) {
-            String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + ch + DELIM;
-            bluetoothConnection.write(finalCommand.getBytes());
-        }
-
-        previousText = s.toString();
-    }
-    @Override
-    public void afterTextChanged(Editable s) {
-    }
-
     @NonNull
     private String getBackspaces(CharSequence currentText, CharSequence previousText) {
         int len = Math.min(currentText.length(), previousText.length());
-        int pos=0;
-        for(pos=0; pos<len; pos++) {
-            if(currentText.charAt(pos)!=previousText.charAt(pos)) break;
+        int pos = 0;
+        for (pos = 0; pos < len; pos++) {
+            if (currentText.charAt(pos) != previousText.charAt(pos)) break;
         }
         int bck = previousText.length() - pos;
 
         StringBuilder x = new StringBuilder();
-        for(int i=0; i<bck; i++) {
+        for (int i = 0; i < bck; i++) {
             x.append('\b');
         }
         return x.toString();
     }
 
-    private String getExtraText (CharSequence currentText, CharSequence previousText) {
+    private String getExtraText(CharSequence currentText, CharSequence previousText) {
         String ch = "";
         int minlen = Math.min(currentText.length(), previousText.length());
         int pos = 0;
 
-        for(pos=0; pos<minlen; pos++) {
-            if(currentText.charAt(pos)!=previousText.charAt(pos)) break;
+        for (pos = 0; pos < minlen; pos++) {
+            if (currentText.charAt(pos) != previousText.charAt(pos)) break;
         }
         ch = currentText.toString().substring(pos);
 
@@ -316,13 +346,12 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
     }
 
 
-
     public void clicker(View view) {
-        if(view instanceof Button) {
-            if(view.getId()==R.id.caps) {
+        if (view instanceof Button) {
+            if (view.getId() == R.id.caps) {
                 capsOn = !capsOn;
 
-                if(capsOn) {
+                if (capsOn) {
                     caps.setText(caps.getText().toString().toUpperCase());
                     a.setText(a.getText().toString().toUpperCase());
                     b.setText(b.getText().toString().toUpperCase());
@@ -380,18 +409,18 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
                     z.setText(z.getText().toString().toLowerCase());
                 }
 
-            } else if(view.getId()==R.id.button_123) {
+            } else if (view.getId() == R.id.button_123) {
                 finish();
                 startActivity(new Intent(MouseKeyboardActivity.this, MouseKeyboardActivity2.class));
-            } else if(view.getId()==R.id.button_enter) {
+            } else if (view.getId() == R.id.button_enter) {
                 typeText.append("\n");
-            } else if(view.getId()==R.id.symbol_comma) {
+            } else if (view.getId() == R.id.symbol_comma) {
                 typeText.append(",");
-            } else if(view.getId()==R.id.symbol_dot) {
+            } else if (view.getId() == R.id.symbol_dot) {
                 typeText.append(".");
-            } else if(view.getId()==R.id.symbol_SPACE) {
+            } else if (view.getId() == R.id.symbol_SPACE) {
                 typeText.append(" ");
-            } else if(view.getId()==R.id.backspace) {
+            } else if (view.getId() == R.id.backspace) {
                 int length = typeText.getText().length();
                 if (length > 0) {
                     typeText.getText().delete(length - 1, length);
