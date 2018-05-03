@@ -2,6 +2,8 @@ package com.example.tanmoykrishnadas.magicremoteclient;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -21,7 +23,7 @@ import java.util.Calendar;
 
 import static com.example.tanmoykrishnadas.magicremoteclient.backend.Constants.DELIM;
 
-public class MouseKeyboardActivity2 extends AppCompatActivity implements View.OnClickListener, TextWatcher {
+public class MouseKeyboardActivity2 extends AppCompatActivity implements View.OnClickListener {
     public static final String TAG = "MouseKeyboardActivity2";
     Context context;
     Button leftButton, middleButton, rightButton;
@@ -37,8 +39,11 @@ public class MouseKeyboardActivity2 extends AppCompatActivity implements View.On
     private Calendar pressDownTime = Calendar.getInstance(), pressReleaseTime = Calendar.getInstance();
     BluetoothConnectionService bluetoothConnection;
     private volatile boolean keyboardOn;
+    private volatile boolean boxBusy = false;
 
     Thread activityManager = new Thread() {
+        boolean written = false;
+
         @Override
         public void run() {
             while (keyboardOn) {
@@ -48,7 +53,24 @@ public class MouseKeyboardActivity2 extends AppCompatActivity implements View.On
                         Log.e(TAG, "Disconnected from host");
                         finish();
                     }
-                    sleep(80);
+
+                    if (!boxBusy) {
+                        String s = typeText.getText().toString();
+                        String bck = getBackspaces(s, previousText);
+                        if (!bck.equals("")) {
+                            String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + bck + DELIM;
+                            bluetoothConnection.write(finalCommand.getBytes());
+                        }
+                        String ch = getExtraText(s, previousText);
+                        if (!ch.equals("")) {
+                            written = false;
+                            String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + ch + DELIM;
+                            bluetoothConnection.write(finalCommand.getBytes());
+                        }
+                        previousText = s;
+                    }
+
+                    sleep(150);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -74,7 +96,6 @@ public class MouseKeyboardActivity2 extends AppCompatActivity implements View.On
         rightButton = (Button) findViewById(R.id.rightButton);
 
         typeText = (EditText) findViewById(R.id.typeText);
-        typeText.addTextChangedListener(this);
 
         middleButton.setOnClickListener(this);
         leftButton.setOnClickListener(this);
@@ -222,39 +243,32 @@ public class MouseKeyboardActivity2 extends AppCompatActivity implements View.On
         keyboardOn = false;
     }
 
-    @Override
-    public void beforeTextChanged(CharSequence s, int start, int count,
-                                  int after) {
-    }
-    @Override
-    public void onTextChanged(CharSequence s, int start, int before, int count) {
-        String ch = getExtraText(s, previousText);
-        if (ch.equals("")) {
-            return;
+    @NonNull
+    private String getBackspaces(CharSequence currentText, CharSequence previousText) {
+        int len = Math.min(currentText.length(), previousText.length());
+        int pos = 0;
+        for (pos = 0; pos < len; pos++) {
+            if (currentText.charAt(pos) != previousText.charAt(pos)) break;
         }
+        int bck = previousText.length() - pos;
 
-        String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + ch + DELIM;
-        bluetoothConnection.write(finalCommand.getBytes());
-        previousText = s.toString();
-    }
-    @Override
-    public void afterTextChanged(Editable s) {
+        StringBuilder x = new StringBuilder();
+        for (int i = 0; i < bck; i++) {
+            x.append('\b');
+        }
+        return x.toString();
     }
 
     private String getExtraText(CharSequence currentText, CharSequence previousText) {
         String ch = "";
-        int currentTextLength = currentText.length();
-        int previousTextLength = previousText.length();
-        int difference = currentTextLength - previousTextLength;
-        if (currentTextLength > previousTextLength) {
-            ch = currentText.toString().substring(previousTextLength);
-        } else if (currentTextLength < previousTextLength) {
-            int diff = previousTextLength - currentTextLength;
-            ch = "";
-            for(int i=0; i<diff; i++) {
-                ch += "\b";
-            }
+        int minlen = Math.min(currentText.length(), previousText.length());
+        int pos = 0;
+
+        for (pos = 0; pos < minlen; pos++) {
+            if (currentText.charAt(pos) != previousText.charAt(pos)) break;
         }
+        ch = currentText.toString().substring(pos);
+
         return ch;
     }
 

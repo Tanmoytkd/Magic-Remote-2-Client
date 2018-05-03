@@ -32,8 +32,8 @@ public class SplashScreen extends AppCompatActivity {
         splashForeground = findViewById(R.id.splashForeground);
         splashBackground = findViewById(R.id.splashBackground);
 
-        Glide.with(this).load(R.drawable.splash_foreground_screen).into(splashForeground);
-        //GlideApp.with(this).load(R.drawable.splash_background_screen).placeholder(R.drawable.splash_background_placeholder).into(splashBackground);
+        GlideApp.with(this).load(R.drawable.app_logo).into(splashForeground);
+        GlideApp.with(this).load(R.drawable.background).into(splashBackground);
 
         transition = new AutoTransition();
         transition.setDuration(1000);

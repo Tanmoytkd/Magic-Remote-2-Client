@@ -1,6 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/toolbar</item>
@@ -8,6 +8,6 @@
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:colorBackground">@android:color/background_light</item>
         <item name="android:textColorPrimary">@color/textColor</item>
+        <item name="android:statusBarColor">@color/DarkGreen</item>
     </style>
-
 </resources>

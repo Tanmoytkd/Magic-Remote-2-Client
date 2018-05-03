@@ -5,6 +5,7 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FFFFFF"
     tools:context="com.example.tanmoykrishnadas.magicremoteclient.SplashScreen">
 
     <FrameLayout
@@ -14,19 +15,23 @@
 
         <ImageView
             android:id="@+id/splashBackground"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_gravity="center"
             android:adjustViewBounds="true"
             android:contentDescription="Background Image of Splash Screen"
             android:cropToPadding="false"
             android:scaleType="centerCrop"
-            app:srcCompat="@drawable/splash_background_placeholder" />
+            android:visibility="visible"
+            app:srcCompat="@drawable/ring_colored" />
 
         <ImageView
             android:id="@+id/splashForeground"
-            android:layout_width="wrap_content"
+            android:layout_width="250dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:layout_marginBottom="30dp"
+            android:adjustViewBounds="true"
             android:visibility="gone"
             app:srcCompat="@drawable/ring_colored" />
 

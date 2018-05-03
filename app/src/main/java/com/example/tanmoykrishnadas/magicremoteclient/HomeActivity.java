@@ -71,6 +71,7 @@ public class HomeActivity extends AppCompatActivity {
     ImageView keyboard;
     ImageView mouseKeyboard;
     ImageView connectionQuality;
+    ImageView bg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +82,8 @@ public class HomeActivity extends AppCompatActivity {
         initializeViews();
         doBluetoothAdapterSetup();
         enableBT();
+
+        GlideApp.with(HomeActivity.this).load(R.drawable.background).into(bg);
 
         mouse.setOnClickListener(e -> {
             startActivity(new Intent(HomeActivity.this, MouseActivity.class));
@@ -170,6 +173,7 @@ public class HomeActivity extends AppCompatActivity {
         mouseKeyboard = findViewById(R.id.mouseKeyboard);
         middleButtons = findViewById(R.id.middleButtons);
         connectionQuality = findViewById(R.id.connectionQuality);
+        bg = findViewById(R.id.bg);
     }
 
     private void doBluetoothAdapterSetup() {

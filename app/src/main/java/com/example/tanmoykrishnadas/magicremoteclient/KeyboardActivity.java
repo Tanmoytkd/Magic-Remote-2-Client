@@ -3,8 +3,6 @@ package com.example.tanmoykrishnadas.magicremoteclient;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -15,9 +13,9 @@ import com.example.tanmoykrishnadas.magicremoteclient.backend.BluetoothConnectio
 
 import static com.example.tanmoykrishnadas.magicremoteclient.backend.Constants.DELIM;
 
-public class KeyboardActivity extends AppCompatActivity implements View.OnTouchListener, View.OnClickListener, TextWatcher {
+public class KeyboardActivity extends AppCompatActivity implements View.OnTouchListener, View.OnClickListener {
     public static final String TAG = "KeyboardActivity";
-    private EditText typeHereEditText;
+    private EditText typeText;
     private Button ctrlButton, altButton, shiftButton, enterButton, tabButton, escButton, printScrButton, backspaceButton;
     private Button deleteButton, clearTextButton;
     private Button nButton, tButton, wButton, rButton, fButton, zButton;
@@ -26,8 +24,11 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
     private String previousText = "";
     BluetoothConnectionService bluetoothConnection;
     private volatile boolean keyboardOn;
+    private volatile boolean boxBusy = false;
 
     Thread activityManager = new Thread() {
+        boolean written = false;
+
         @Override
         public void run() {
             while(keyboardOn) {
@@ -37,7 +38,24 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
                         Log.e(TAG, "Disconnected from host");
                         finish();
                     }
-                    sleep(80);
+
+                    if (!boxBusy) {
+                        String s = typeText.getText().toString();
+                        String bck = getBackspaces(s, previousText);
+                        if (!bck.equals("")) {
+                            String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + bck + DELIM;
+                            bluetoothConnection.write(finalCommand.getBytes());
+                        }
+                        String ch = getExtraText(s, previousText);
+                        if (!ch.equals("")) {
+                            written = false;
+                            String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + ch + DELIM;
+                            bluetoothConnection.write(finalCommand.getBytes());
+                        }
+                        previousText = s;
+                    }
+
+                    sleep(150);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -69,7 +87,7 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
 
         bluetoothConnection = BluetoothConnectionService.getInstance();
 
-        typeHereEditText = (EditText) findViewById(R.id.typeHereEditText);
+        typeText = (EditText) findViewById(R.id.typeText);
         ctrlButton = (Button) findViewById(R.id.ctrlButton);
         altButton = (Button) findViewById(R.id.altButton);
         shiftButton = (Button) findViewById(R.id.shiftButton);
@@ -121,7 +139,6 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
         ctrlAltTButton.setOnClickListener(this);
         ctrlShiftZButton.setOnClickListener(this);
         altF4Button.setOnClickListener(this);
-        typeHereEditText.addTextChangedListener(this);
 
         keyboardOn = true;
         activityManager.start();
@@ -159,7 +176,7 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
     public void onClick(View v) {
         int id = v.getId();
         if (id == R.id.clearTextButton) {
-            typeHereEditText.setText("");
+            typeText.setText("");
         } else if (id == R.id.ctrlAltTButton || id == R.id.ctrlShiftZButton || id == R.id.altF4Button) {
             String message = "CTRL_SHIFT_Z";
             switch (id) {
@@ -237,30 +254,6 @@ public class KeyboardActivity extends AppCompatActivity implements View.OnTouchL
             String finalCommand = DELIM + action + DELIM + keyCode + DELIM;
             bluetoothConnection.write(finalCommand.getBytes());
         }
-    }
-
-    @Override
-    public void beforeTextChanged(CharSequence s, int start, int count,
-                                  int after) {
-    }
-    @Override
-    public void onTextChanged(CharSequence s, int start, int before, int count) {
-        String bck = getBackspaces(s, previousText);
-        if(!bck.equals("")) {
-            String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + bck + DELIM;
-            bluetoothConnection.write(finalCommand.getBytes());
-        }
-
-        String ch = getExtraText(s, previousText);
-        if (!ch.equals("")) {
-            String finalCommand = DELIM + "TYPE_CHARACTER" + DELIM + ch + DELIM;
-            bluetoothConnection.write(finalCommand.getBytes());
-        }
-
-        previousText = s.toString();
-    }
-    @Override
-    public void afterTextChanged(Editable s) {
     }
 
     @NonNull
