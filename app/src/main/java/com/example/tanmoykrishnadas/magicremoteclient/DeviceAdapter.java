@@ -10,6 +10,7 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -24,6 +25,7 @@ class DeviceHolder extends RecyclerView.ViewHolder {
     View view;
     private ImageView icon;
     TextView deviceName, deviceAddress;
+    Button connectBtn;
 
 
     DeviceHolder(View itemView) {
@@ -32,6 +34,7 @@ class DeviceHolder extends RecyclerView.ViewHolder {
         icon = itemView.findViewById(R.id.icon);
         deviceName = itemView.findViewById(R.id.device_Name);
         deviceAddress = itemView.findViewById(R.id.device_address);
+        connectBtn = itemView.findViewById(R.id.connectButton);
     }
 }
 
@@ -70,6 +73,26 @@ class DeviceAdapter extends RecyclerView.Adapter<DeviceHolder> {
         holder.deviceAddress.setText(device.getAddress());
 
         holder.view.setOnClickListener(e -> {
+            Log.d(TAG, "Start pairing");
+            Log.d(TAG, "Starting to pair...");
+            if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+                device.createBond();
+            } else {
+                if (homeActivity != null) homeActivity.startConnection(device);
+                else if (mainActivity != null) mainActivity.startConnection(device);
+            }
+            IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+
+            if (homeActivity != null) {
+                activity.registerReceiver(homeActivity.bondingReceiver, filter);
+                homeActivity.bondingReceiverFlag = true;
+            } else if (mainActivity != null) {
+                activity.registerReceiver(homeActivity.bondingReceiver, filter);
+                homeActivity.bondingReceiverFlag = true;
+            }
+        });
+
+        holder.connectBtn.setOnClickListener(e-> {
             Log.d(TAG, "Start pairing");
             Log.d(TAG, "Starting to pair...");
             if (device.getBondState() != BluetoothDevice.BOND_BONDED) {

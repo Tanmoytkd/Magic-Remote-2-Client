@@ -25,47 +25,66 @@
             android:visibility="visible"
             tools:context=".MouseActivity">
 
-            <TextView
-                android:id="@+id/mousePad"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-
-                android:background="@color/touchpad"
-                android:clickable="true"
-                android:focusable="true"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <Button
-                android:id="@+id/middleButton"
-                android:layout_width="30dp"
-                android:layout_height="50dp"
-                android:layout_marginTop="8dp"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
             <Button
                 android:id="@+id/leftButton"
                 android:layout_width="0dp"
                 android:layout_height="50dp"
+                android:layout_marginBottom="2dp"
                 android:layout_marginEnd="2dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="8dp"
+                android:layout_marginStart="4dp"
+                android:alpha="0.3"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/middleButton"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintStart_toStartOf="parent" />
 
             <Button
                 android:id="@+id/rightButton"
                 android:layout_width="0dp"
                 android:layout_height="50dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="2dp"
+                android:layout_marginEnd="4dp"
                 android:layout_marginStart="2dp"
-                android:layout_marginTop="8dp"
+                android:alpha="0.3"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/middleButton"
+                app:layout_constraintStart_toEndOf="@+id/middleButton" />
+
+            <Button
+                android:id="@+id/middleButton"
+                android:layout_width="30dp"
+                android:layout_height="50dp"
+                android:layout_marginBottom="2dp"
+                android:alpha="0.3"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent" />
+
+            <TextView
+                android:id="@+id/mousePad"
+                android:layout_width="464dp"
+                android:layout_height="match_parent"
+
+                android:layout_marginBottom="4dp"
+                android:clickable="true"
+                android:focusable="true"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:id="@+id/imageView3"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:elevation="0dp"
+                android:scaleType="centerCrop"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.0"
+                app:srcCompat="@drawable/background" />
 
         </android.support.constraint.ConstraintLayout>
 

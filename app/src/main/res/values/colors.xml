@@ -12,4 +12,6 @@
     <color name="buttonTextColor">#1f3e4f</color>
     <color name="touchpad">#480099cc</color>
     <color name="DarkGreen">#28800f</color>
+    <color name="teal">#008080</color>
+    <color name="white">#ffffff</color>
 </resources>

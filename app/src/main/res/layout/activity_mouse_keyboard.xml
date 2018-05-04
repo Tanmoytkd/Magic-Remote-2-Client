@@ -15,12 +15,48 @@
         android:paddingBottom="4dp"
         tools:context=".MouseActivity">
 
+        <Button
+            android:id="@+id/rightButton"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_marginBottom="2dp"
+            android:layout_marginEnd="4dp"
+            android:layout_marginStart="2dp"
+            android:alpha="0.3"
+            android:textAllCaps="false"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/middleButton" />
+
+        <Button
+            android:id="@+id/leftButton"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_marginBottom="2dp"
+            android:layout_marginEnd="2dp"
+            android:layout_marginStart="4dp"
+            android:alpha="0.3"
+            android:textAllCaps="false"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/middleButton"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <Button
+            android:id="@+id/middleButton"
+            android:layout_width="30dp"
+            android:layout_height="50dp"
+            android:layout_marginBottom="2dp"
+            android:alpha="0.3"
+            android:textAllCaps="false"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent" />
+
         <TextView
             android:id="@+id/mousePad"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
 
-            android:background="@color/touchpad"
             android:clickable="true"
             android:focusable="true"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -28,39 +64,16 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <Button
-            android:textAllCaps="false"
-            android:id="@+id/middleButton"
-            android:layout_width="30dp"
-            android:layout_height="50dp"
-            android:layout_marginTop="8dp"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <Button
-            android:textAllCaps="false"
-            android:id="@+id/leftButton"
+        <ImageView
+            android:id="@+id/imageView2"
             android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:layout_marginEnd="2dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            app:layout_constraintEnd_toStartOf="@+id/middleButton"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <Button
-            android:textAllCaps="false"
-            android:id="@+id/rightButton"
-            android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="2dp"
-            android:layout_marginTop="8dp"
+            android:layout_height="0dp"
+            android:scaleType="centerCrop"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/middleButton"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/background" />
 
     </android.support.constraint.ConstraintLayout>
 
@@ -512,6 +525,7 @@
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
             android:ems="10"
+            android:hint="Tap here to start typing "
             android:inputType="textMultiLine"
             app:layout_constraintBottom_toTopOf="@+id/T"
             app:layout_constraintLeft_toLeftOf="parent"

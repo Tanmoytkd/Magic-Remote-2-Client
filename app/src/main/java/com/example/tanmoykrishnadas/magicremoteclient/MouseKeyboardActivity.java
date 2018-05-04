@@ -50,6 +50,9 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
     private volatile boolean capsOn = false;
     private volatile boolean boxBusy = false;
 
+    int fingers;
+    float currentX, currentY;
+
     Button a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, caps;
 
     Thread activityManager = new Thread() {
@@ -90,6 +93,56 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
         }
     };
 
+    Thread mouseManager = new Thread() {
+        @Override
+        public void run() {
+//            runOnUiThread(()->{
+//                Toast.makeText(MouseKeyboardActivity.this, "shtart", Toast.LENGTH_SHORT).show();
+//            });
+            while(keyboardOn) {
+                try {
+                    String status = bluetoothConnection.getBluetoothStatus();
+                    if(!status.equals("connected")) {
+                        Log.e(TAG, "Disconnected from host");
+                        finish();
+                    }
+
+                    if(fingers==1) {
+//                        runOnUiThread(()->{
+//                            Toast.makeText(MouseKeyboardActivity.this, "one", Toast.LENGTH_SHORT).show();
+//                        });
+                        distanceX = currentX - initialX;
+                        distanceY = currentY - initialY;
+
+                        double distance = Math.sqrt(distanceX*distanceX + distanceY*distanceY);
+//                        runOnUiThread(()->{
+//                            mousePad.setText(String.valueOf(distance));
+//                        });
+                        double multiplicationFactor = Math.min(Math.max(1, distance/11.00), 3.5);
+//                Log.d("NEW_FEATURE", ""+distance);
+
+                        initialX = currentX;
+                        initialY = currentY;
+                        if (distanceX != 0 || distanceY != 0) {
+                            String finalCommand = DELIM + "MOUSE_MOVE" + DELIM + distanceX*multiplicationFactor + DELIM + distanceY*multiplicationFactor + DELIM;
+                            bluetoothConnection.write(finalCommand.getBytes());
+                            mouseMoved = true;
+                        }
+                    }
+
+
+
+                    sleep(40);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+//            runOnUiThread(()->{
+//                Toast.makeText(MouseKeyboardActivity.this, "finishh", Toast.LENGTH_SHORT).show();
+//            });
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,6 +158,8 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
         }
 //        final String id = "com.bangla.keyboard/.MyKeyboard";
 //        imeManager.setInputMethod(id);
+
+
 
 
         bluetoothConnection = BluetoothConnectionService.getInstance();
@@ -154,11 +209,12 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
 
         keyboardOn = true;
         activityManager.start();
+        mouseManager.start();
 
         mousePad.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                int fingers = event.getPointerCount();
+                fingers = event.getPointerCount();
 
                 if (fingers == 1) handleSingleTouch(event);
                 else if (fingers == 2) handleDoubleTouch(event);
@@ -181,7 +237,7 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
             case MotionEvent.ACTION_DOWN:
                 pressDownTime = Calendar.getInstance();
 
-                if (pressDownTime.getTimeInMillis() - pressReleaseTime.getTimeInMillis() < 180) {
+                if((pressDownTime.getTimeInMillis()-pressReleaseTime.getTimeInMillis())<180) {
                     String finalCommand = DELIM + "LEFT_MOUSE_PRESS" + DELIM;
                     bluetoothConnection.write(finalCommand.getBytes());
                     mousePressed = true;
@@ -189,36 +245,27 @@ public class MouseKeyboardActivity extends AppCompatActivity implements View.OnC
 
                 initialX = event.getX();
                 initialY = event.getY();
+                currentX = initialX;
+                currentY = initialY;
                 mouseMoved = false;
                 break;
             case MotionEvent.ACTION_MOVE:
 
-                distanceX = event.getX() - initialX;
-                distanceY = event.getY() - initialY;
+                currentX = event.getX();
+                currentY = event.getY();
 
-                double distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-                double multiplicationFactor = Math.max(1, distance / 7.00);
-//                Log.d("NEW_FEATURE", ""+distance);
-
-                initialX = event.getX();
-                initialY = event.getY();
-                if (distanceX != 0 || distanceY != 0) {
-                    String finalCommand = DELIM + "MOUSE_MOVE" + DELIM + distanceX * multiplicationFactor + DELIM + distanceY * multiplicationFactor + DELIM;
-                    bluetoothConnection.write(finalCommand.getBytes());
-                    mouseMoved = true;
-                }
                 break;
             case MotionEvent.ACTION_UP:
-                if (mousePressed) {
+                if(mousePressed) {
                     String finalCommand = DELIM + "LEFT_MOUSE_RELEASE" + DELIM;
                     bluetoothConnection.write(finalCommand.getBytes());
-                    mousePressed = false;
+                    mousePressed=false;
                 }
 
                 pressReleaseTime = Calendar.getInstance();
                 Long timeDifference = pressReleaseTime.getTimeInMillis() - pressDownTime.getTimeInMillis();
 
-                if (!mouseMoved && timeDifference < 250) {
+                if (!mouseMoved && timeDifference < 180) {
                     String finalCommand = DELIM + "LEFT_CLICK" + DELIM;
                     bluetoothConnection.write(finalCommand.getBytes());
 //                            ////Log.d(TAG, "LEFT_CLICK");

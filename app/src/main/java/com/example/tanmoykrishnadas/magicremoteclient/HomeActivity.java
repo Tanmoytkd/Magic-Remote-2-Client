@@ -342,11 +342,16 @@ public class HomeActivity extends AppCompatActivity {
             device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                Toast.makeText(HomeActivity.this,
-                        "Device Found: " + device.getName() + " : " + device.getAddress(), Toast.LENGTH_LONG).show();
+//                Toast.makeText(HomeActivity.this,
+//                        "Device Found: " + device.getName() + " : " + device.getAddress(), Toast.LENGTH_LONG).show();
 
                 devices.add(device);
-                deviceList.setAdapter(new DeviceAdapter(devices, HomeActivity.this));
+                try {
+                    deviceList.setAdapter(new DeviceAdapter(devices, HomeActivity.this));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
                 Log.d(TAG, "Device Found: " + device.getName() + " : " + device.getAddress());
             } else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
                 bluetoothConnection.setBluetoothStatus("connected");

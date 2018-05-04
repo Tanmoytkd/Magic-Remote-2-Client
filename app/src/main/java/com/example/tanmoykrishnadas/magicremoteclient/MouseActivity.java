@@ -4,8 +4,6 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -35,12 +33,14 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
     private float distanceY = 0;
     private Calendar pressDownTime=Calendar.getInstance(), pressReleaseTime=Calendar.getInstance();
     BluetoothConnectionService bluetoothConnection;
-    private volatile boolean keyboardOn;
+    private volatile boolean mouseOn;
+    int fingers;
+    float currentX, currentY;
 
     Thread activityManager = new Thread() {
         @Override
         public void run() {
-            while(keyboardOn) {
+            while(mouseOn) {
                 try {
                     String status = bluetoothConnection.getBluetoothStatus();
                     if(!status.equals("connected")) {
@@ -48,6 +48,47 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
                         finish();
                     }
                     sleep(80);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    };
+
+    Thread mouseManager = new Thread() {
+        @Override
+        public void run() {
+            while(mouseOn) {
+                try {
+                    String status = bluetoothConnection.getBluetoothStatus();
+                    if(!status.equals("connected")) {
+                        Log.e(TAG, "Disconnected from host");
+                        finish();
+                    }
+
+                    if(fingers==1) {
+                        distanceX = currentX - initialX;
+                        distanceY = currentY - initialY;
+
+                        double distance = Math.sqrt(distanceX*distanceX + distanceY*distanceY);
+//                        runOnUiThread(()->{
+//                            mousePad.setText(String.valueOf(distance));
+//                        });
+                        double multiplicationFactor = Math.min(Math.max(1, distance/11.00), 3.5);
+//                Log.d("NEW_FEATURE", ""+distance);
+
+                        initialX = currentX;
+                        initialY = currentY;
+                        if (distanceX != 0 || distanceY != 0) {
+                            String finalCommand = DELIM + "MOUSE_MOVE" + DELIM + distanceX*multiplicationFactor + DELIM + distanceY*multiplicationFactor + DELIM;
+                            bluetoothConnection.write(finalCommand.getBytes());
+                            mouseMoved = true;
+                        }
+                    }
+
+
+
+                    sleep(40);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -76,13 +117,14 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
 
         mousePad = (TextView) findViewById(R.id.mousePad);
 
-        keyboardOn = true;
+        mouseOn = true;
         activityManager.start();
+        mouseManager.start();
 
         mousePad.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                int fingers = event.getPointerCount();
+                fingers = event.getPointerCount();
 
                 if (fingers == 1) handleSingleTouch(event);
                 else if (fingers == 2) handleDoubleTouch(event);
@@ -105,7 +147,7 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
             case MotionEvent.ACTION_DOWN:
                 pressDownTime = Calendar.getInstance();
 
-                if(pressDownTime.getTimeInMillis()-pressReleaseTime.getTimeInMillis()<180) {
+                if((pressDownTime.getTimeInMillis()-pressReleaseTime.getTimeInMillis())<120) {
                     String finalCommand = DELIM + "LEFT_MOUSE_PRESS" + DELIM;
                     bluetoothConnection.write(finalCommand.getBytes());
                     mousePressed = true;
@@ -113,24 +155,15 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
 
                 initialX = event.getX();
                 initialY = event.getY();
+                currentX = initialX;
+                currentY = initialY;
                 mouseMoved = false;
                 break;
             case MotionEvent.ACTION_MOVE:
 
-                distanceX = event.getX() - initialX;
-                distanceY = event.getY() - initialY;
+                currentX = event.getX();
+                currentY = event.getY();
 
-                double distance = Math.sqrt(distanceX*distanceX + distanceY*distanceY);
-                double multiplicationFactor = Math.max(1, distance/7.00);
-//                Log.d("NEW_FEATURE", ""+distance);
-
-                initialX = event.getX();
-                initialY = event.getY();
-                if (distanceX != 0 || distanceY != 0) {
-                    String finalCommand = DELIM + "MOUSE_MOVE" + DELIM + distanceX*multiplicationFactor + DELIM + distanceY*multiplicationFactor + DELIM;
-                    bluetoothConnection.write(finalCommand.getBytes());
-                    mouseMoved = true;
-                }
                 break;
             case MotionEvent.ACTION_UP:
                 if(mousePressed) {
@@ -142,7 +175,7 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
                 pressReleaseTime = Calendar.getInstance();
                 Long timeDifference = pressReleaseTime.getTimeInMillis() - pressDownTime.getTimeInMillis();
 
-                if (!mouseMoved && timeDifference < 250) {
+                if (!mouseMoved && timeDifference < 120) {
                     String finalCommand = DELIM + "LEFT_CLICK" + DELIM;
                     bluetoothConnection.write(finalCommand.getBytes());
 //                            ////Log.d(TAG, "LEFT_CLICK");
@@ -201,7 +234,7 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
     @Override
     protected void onResume() {
         super.onResume();
-        keyboardOn = true;
+        mouseOn = true;
 //        if(bluetoothConnection!=null) bluetoothConnection.setContext(MouseActivity.this);
     }
 
@@ -213,6 +246,6 @@ public class MouseActivity extends AppCompatActivity implements View.OnClickList
     @Override
     public void onDestroy() {
         super.onDestroy();
-        keyboardOn = false;
+        mouseOn = false;
     }
 }

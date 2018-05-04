@@ -40,6 +40,8 @@ public class MouseKeyboardActivity2 extends AppCompatActivity implements View.On
     BluetoothConnectionService bluetoothConnection;
     private volatile boolean keyboardOn;
     private volatile boolean boxBusy = false;
+    int fingers;
+    float currentX, currentY;
 
     Thread activityManager = new Thread() {
         boolean written = false;
@@ -78,6 +80,47 @@ public class MouseKeyboardActivity2 extends AppCompatActivity implements View.On
         }
     };
 
+    Thread mouseManager = new Thread() {
+        @Override
+        public void run() {
+            while(keyboardOn) {
+                try {
+                    String status = bluetoothConnection.getBluetoothStatus();
+                    if(!status.equals("connected")) {
+                        Log.e(TAG, "Disconnected from host");
+                        finish();
+                    }
+
+                    if(fingers==1) {
+                        distanceX = currentX - initialX;
+                        distanceY = currentY - initialY;
+
+                        double distance = Math.sqrt(distanceX*distanceX + distanceY*distanceY);
+//                        runOnUiThread(()->{
+//                            mousePad.setText(String.valueOf(distance));
+//                        });
+                        double multiplicationFactor = Math.min(Math.max(1, distance/11.00), 3.5);
+//                Log.d("NEW_FEATURE", ""+distance);
+
+                        initialX = currentX;
+                        initialY = currentY;
+                        if (distanceX != 0 || distanceY != 0) {
+                            String finalCommand = DELIM + "MOUSE_MOVE" + DELIM + distanceX*multiplicationFactor + DELIM + distanceY*multiplicationFactor + DELIM;
+                            bluetoothConnection.write(finalCommand.getBytes());
+                            mouseMoved = true;
+                        }
+                    }
+
+
+
+                    sleep(40);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    };
+
     private EditText typeText;
     private String previousText = "";
 
@@ -106,6 +149,7 @@ public class MouseKeyboardActivity2 extends AppCompatActivity implements View.On
 
         keyboardOn = true;
         activityManager.start();
+        mouseManager.start();
 
         mousePad.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -133,7 +177,7 @@ public class MouseKeyboardActivity2 extends AppCompatActivity implements View.On
             case MotionEvent.ACTION_DOWN:
                 pressDownTime = Calendar.getInstance();
 
-                if (pressDownTime.getTimeInMillis() - pressReleaseTime.getTimeInMillis() < 180) {
+                if((pressDownTime.getTimeInMillis()-pressReleaseTime.getTimeInMillis())<120) {
                     String finalCommand = DELIM + "LEFT_MOUSE_PRESS" + DELIM;
                     bluetoothConnection.write(finalCommand.getBytes());
                     mousePressed = true;
@@ -141,36 +185,27 @@ public class MouseKeyboardActivity2 extends AppCompatActivity implements View.On
 
                 initialX = event.getX();
                 initialY = event.getY();
+                currentX = initialX;
+                currentY = initialY;
                 mouseMoved = false;
                 break;
             case MotionEvent.ACTION_MOVE:
 
-                distanceX = event.getX() - initialX;
-                distanceY = event.getY() - initialY;
+                currentX = event.getX();
+                currentY = event.getY();
 
-                double distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-                double multiplicationFactor = Math.max(1, distance / 7.00);
-//                Log.d("NEW_FEATURE", ""+distance);
-
-                initialX = event.getX();
-                initialY = event.getY();
-                if (distanceX != 0 || distanceY != 0) {
-                    String finalCommand = DELIM + "MOUSE_MOVE" + DELIM + distanceX * multiplicationFactor + DELIM + distanceY * multiplicationFactor + DELIM;
-                    bluetoothConnection.write(finalCommand.getBytes());
-                    mouseMoved = true;
-                }
                 break;
             case MotionEvent.ACTION_UP:
-                if (mousePressed) {
+                if(mousePressed) {
                     String finalCommand = DELIM + "LEFT_MOUSE_RELEASE" + DELIM;
                     bluetoothConnection.write(finalCommand.getBytes());
-                    mousePressed = false;
+                    mousePressed=false;
                 }
 
                 pressReleaseTime = Calendar.getInstance();
                 Long timeDifference = pressReleaseTime.getTimeInMillis() - pressDownTime.getTimeInMillis();
 
-                if (!mouseMoved && timeDifference < 250) {
+                if (!mouseMoved && timeDifference < 120) {
                     String finalCommand = DELIM + "LEFT_CLICK" + DELIM;
                     bluetoothConnection.write(finalCommand.getBytes());
 //                            ////Log.d(TAG, "LEFT_CLICK");
@@ -205,6 +240,8 @@ public class MouseKeyboardActivity2 extends AppCompatActivity implements View.On
             default:
         }
     }
+
+
 
     //OnClick method is called when any of the buttons are pressed
     @Override
